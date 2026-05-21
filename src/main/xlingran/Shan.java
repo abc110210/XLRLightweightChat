@@ -98,7 +98,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 // 从配置读取未知子命令提示
                 String unknownSubCmdMsg = getConfig().getString("Message.UnknownSubCmd");
                 if (unknownSubCmdMsg != null && !unknownSubCmdMsg.isEmpty()) {
-                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', unknownSubCmdMsg + args[0]));
+                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', unknownSubCmdMsg));
                 } else {
                     sender.sendMessage(ChatColor.RED + "未知的子命令: " + args[0]);
                 }
@@ -156,7 +156,8 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
         // 遍历所有聊天格式，找到玩家有权限的第一个格式
         for (Map.Entry<String, String> entry : chatFormats.entrySet()) {
-            String permission = "xlr.message." + entry.getKey();
+            // 权限格式：xlr.chat.配置文件中的键名（如 xlr.chat.op）
+            String permission = "xlr.chat." + entry.getKey();
 
             if (player.hasPermission(permission)) {
                 String format = entry.getValue();
