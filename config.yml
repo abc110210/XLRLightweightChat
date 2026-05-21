@@ -1,22 +1,40 @@
-Chat:
-  op: "[管理员]%player%:%color1%%chat%"
-  vip: "[VIP]%player%:%color2%%chat%"
-  svip: "[SVIP]%player%:%color3%%chat%"
 
-# 变量颜色配置（键名不要加引号）
+# 聊天格式，可以多个，格式: 称号 玩家名称 : 16进制颜色 聊天
+# 可以添加多个，对应权限 xlr.chat.op
+# 例子 [居民]Shan: (16进制颜色代码)1123
+Chat:
+  default: "%ChatPrefix%%player%: &a%chat%"
+  op: "%ChatPrefix%%player%:%color1%%chat%"
+  vip: "%ChatPrefix%%player%:%color2%%chat%"
+  svip: "%ChatPrefix%%player%:%color3%%chat%"
+
+# 16进制渐变颜色变量配置，可以创建多个
+# 可以在上面使用变量是 %color1% %color2%
 Variable:
   color1: "#ff9a9e"  # 管理员消息颜色：粉红色
   color2: "#ffd700"  # VIP消息颜色：金色
   color3: "#ff6b6b-#ff8e8e"  # SVIP消息颜色：红色渐变
-  # 更多自定义变量可以根据需要添加
 
+# 需要权限 xlr.chat.playertitle.1
+# 称号，格式 ID: "称号"
+# ID会从高往下检测权限
+PlayerTitle:
+  1: "&7[居民]"
+  2: "&c[管理员]"
+  3: "&6[VIP]"
+  4: "&c[SVIP]"
+
+# 输入命令，命令输出提示
 Command:
+  # 输入/xlrchat reload 后提示
   reload:
     - "&a配置已重新加载"
     - "&b已加载 %chat_format% 个聊天格式"
     - "&b已加载 %color_config% 个变量颜色配置"
-
+# 消息提示
 Message:
+  # 没有权限时输出提示
   NoPermission: "&c你没有权限执行此命令"
-  UnknownSubCmd: "&c未知的子命令："
+  #
+  UnknownSubCmd: "&c未知的子命令"
   NoArgs: "&e用法: /xlrchat reload"
