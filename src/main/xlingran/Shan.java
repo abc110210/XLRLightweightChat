@@ -76,13 +76,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
             // 检查参数
             if (args.length == 0) {
-                // 从配置读取无参数提示
-                String noArgsMsg = getConfig().getString("Message.NoArgs");
-                if (noArgsMsg != null && !noArgsMsg.isEmpty()) {
-                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', noArgsMsg));
-                } else {
-                    sender.sendMessage(ChatColor.YELLOW + "用法: /xlrchat reload");
-                }
+                sender.sendMessage(ChatColor.YELLOW + "用法: /xlrchat reload/cp");
                 return true;
             }
 
@@ -154,12 +148,13 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             shop.setItem(row * 9 + 8, blackGlass); // 右侧
         }
         
-        // 第6行第5格（索引40）放置品红色玻璃板 - 下一页
+        // 第6行第5格（索引49）放置品红色玻璃板 - 下一页
+        // 第6行从索引 45 开始，第5个格子是 45+4=49
         ItemStack magentaGlass = new ItemStack(Material.MAGENTA_STAINED_GLASS_PANE);
         ItemMeta magentaMeta = magentaGlass.getItemMeta();
         magentaMeta.setDisplayName(ChatColor.RED + "下一页");
         magentaGlass.setItemMeta(magentaMeta);
-        shop.setItem(40, magentaGlass);
+        shop.setItem(49, magentaGlass);
         
         // 剩余28个格子放置称号（索引：9-17, 18-26, 27-35, 36-38, 39, 41-44）
         // 实际上应该是第2-5行的中间7格，共28格
@@ -185,6 +180,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 
                 // 处理颜色变量
                 String displayName = processColorVariables(titleName);
+                // 先转换传统颜色代码，再添加 16 进制颜色
                 meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
                 
                 // Lore
@@ -245,7 +241,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         event.setCancelled(true);
         
         // 点击的是品红色玻璃板（下一页）
-        if (event.getSlot() == 40) {
+        if (event.getSlot() == 49) {
             player.closeInventory();
             player.sendMessage(ChatColor.YELLOW + "敬请期待更多称号!");
             return;
@@ -372,7 +368,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (matchedFormat != null) {
             String format = matchedFormat;
 
-            // 先替换玩家称号（%ChatPrefix%）
+            // 先替换玩家称号（%ChatPrefix%）- 称号已经包含完整的颜色代码
             String playerTitle = getPlayerTitle(player);
             format = format.replace("%ChatPrefix%", playerTitle);
 
@@ -388,6 +384,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             // 直接广播格式化后的消息
             // Spigot 1.16+ 原生支持 16 进制颜色，ChatColor.of() 返回的对象可以直接使用
             // 只需要转换 & 颜色代码即可
+            // 注意：必须先转换传统颜色代码，因为 16 进制颜色已经是 §x§... 格式
             String finalMessage = ChatColor.translateAlternateColorCodes('&', result);
             Bukkit.broadcastMessage(finalMessage);
         }
@@ -402,11 +399,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String coloredMessage = applyGradientColor(message, variableColors.get(colorVariable));
             // 移除颜色变量占位符
             format = format.replace(colorVariable, "");
-        }
-
-        // 替换消息内容（%message% 已改为 %chat%）
-        if (colorVariable != null && variableColors.containsKey(colorVariable)) {
-            String coloredMessage = applyGradientColor(message, variableColors.get(colorVariable));
+            // 替换消息内容（%chat% 已改为 %chat%）
             format = format.replace("%chat%", coloredMessage);
         } else {
             format = format.replace("%chat%", message);
@@ -562,16 +555,16 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                     if (colors.length == 2) {
                         String startColor = colors[0].replace("#", "");
                         String endColor = colors[1].replace("#", "");
-                        // 暂时用起始颜色替换
-                        ChatColor color = ChatColor.of("#" + startColor);
-                        text = text.replace(variable, color.toString());
+                        // 暂时用起始颜色替换，转换为 §x 格式
+                        String hexColor = "#" + startColor;
+                        text = text.replace(variable, net.md_5.bungee.api.ChatColor.of(hexColor).toString());
                     }
                 }
                 // 如果是单一颜色
                 else if (colorConfig.startsWith("#")) {
                     String hexColor = colorConfig.replace("#", "");
-                    ChatColor color = ChatColor.of("#" + hexColor);
-                    text = text.replace(variable, color.toString());
+                    // 转换为 §x 格式的 16 进制颜色
+                    text = text.replace(variable, net.md_5.bungee.api.ChatColor.of("#" + hexColor).toString());
                 }
             }
         }
