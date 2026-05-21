@@ -1,7 +1,9 @@
 
 # 聊天格式，可以多个，格式: 称号 玩家名称 : 16进制颜色 聊天
-# 可以添加多个，对应权限 xlr.chat.op
+# 可以添加多个，对应权限 xlr.chat.default
 # 例子 [居民]Shan: (16进制颜色代码)1123
+# 玩家默认拥有 xlr.chat.default 权限，
+# 会从下往上检测权限，如果检测到有，则使用此格式
 Chat:
   default: "%ChatPrefix%%player%: &a%chat%"
   op: "%ChatPrefix%%player%:%color1%%chat%"
