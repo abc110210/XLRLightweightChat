@@ -1,3 +1,10 @@
 Message:
   op: "&a[管理员]&b%player%:&a%message%"
   vip: "&6[VIP]&e%player%:&6%message%"
+  svip: "&d[SVIP]&f%player%:&d%message%"
+
+# 变量颜色配置
+Variable:
+  %message%: "#ff9a9e"  # 单一颜色示例：粉红色
+  # %message%: "#ff9a9e-#fad0c4"  # 渐变色示例：从粉红色到淡黄色
+  # %message%: "#00ff00-#0000ff"  # 渐变色示例：从绿色到蓝色
