@@ -4,3 +4,14 @@ main: xlingran.Shan
 api-version: 1.21.1
 author: Shan
 description: 一款多功能聊天插件
+
+commands:
+  xlrchat:
+    description: 重载插件配置
+    usage: /<command> reload
+    permission: xlr.chat.reload
+
+permissions:
+  xlr.chat.reload:
+    description: 重载插件配置
+    default: op
