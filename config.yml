@@ -1,0 +1,3 @@
+Message:
+  op: "&a[管理员]&b%player%:&a%message%"
+  vip: "&6[VIP]&e%player%:&6%message%"

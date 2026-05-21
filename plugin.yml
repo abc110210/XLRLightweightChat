@@ -1,0 +1,6 @@
+name: XLRLightweightChat
+version: 1.0.0
+main: xlingran.Shan
+api-version: 1.21.1
+author: Shan
+description: 一款多功能聊天插件
