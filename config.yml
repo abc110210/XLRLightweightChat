@@ -1,11 +1,11 @@
 Message:
-  op: "&a[管理员]&b%player%:%messageop%%message%"
-  vip: "&6[VIP]&e%player%:&6%messagevip%%message%"
-  svip: "&d[SVIP]&f%player%:&d%messagesvip%%message%"
+  op: "&a[管理员]&b%player%:%color1%%message%"
+  vip: "&6[VIP]&e%player%:&6%color2%%message%"
+  svip: "&d[SVIP]&f%player%:&d%color3%%message%"
 
-# 变量颜色配置
+# 变量颜色配置（键名必须用引号包裹）
 Variable:
-  %messageop%: "#ff9a9e"  # 管理员消息颜色：粉红色
-  %messagevip%: "#ffd700"  # VIP消息颜色：金色
-  %messagesvip%: "#ff6b6b-#ff8e8e"  # SVIP消息颜色：红色渐变
+  "%color1%": "#ff9a9e"  # 管理员消息颜色：粉红色
+  "%color2%": "#ffd700"  # VIP消息颜色：金色
+  "%color3%": "#ff6b6b-#ff8e8e"  # SVIP消息颜色：红色渐变
   # 更多自定义变量可以根据需要添加
