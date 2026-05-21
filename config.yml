@@ -1,7 +1,7 @@
-Message:
-  op: "&a[管理员]&b%player%:%color1%%message%"
-  vip: "&6[VIP]&e%player%:&6%color2%%message%"
-  svip: "&d[SVIP]&f%player%:&d%color3%%message%"
+Chat:
+  op: "[管理员]%player%:%color1%%chat%"
+  vip: "[VIP]%player%:%color2%%chat%"
+  svip: "[SVIP]%player%:%color3%%chat%"
 
 # 变量颜色配置（键名不要加引号）
 Variable:
@@ -9,3 +9,14 @@ Variable:
   color2: "#ffd700"  # VIP消息颜色：金色
   color3: "#ff6b6b-#ff8e8e"  # SVIP消息颜色：红色渐变
   # 更多自定义变量可以根据需要添加
+
+Command:
+  reload:
+    - "&a配置已重新加载"
+    - "&b已加载 %chat_format% 个聊天格式"
+    - "&b已加载 %color_config% 个变量颜色配置"
+
+Message:
+  NoPermission: "&c你没有权限执行此命令"
+  UnknownSubCmd: "&c未知的子命令："
+  NoArgs: "&e用法: /xlrchat reload"
