@@ -396,8 +396,13 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     }
 
     private String processFormat(String format, String message) {
+        // 调试输出：显示处理前的格式
+        Bukkit.getConsoleSender().sendMessage("§e[DEBUG processFormat] 输入格式: " + format);
+        
         // 查找格式中所有的颜色变量
         String colorVariable = extractColorVariable(format);
+        
+        Bukkit.getConsoleSender().sendMessage("§e[DEBUG processFormat] 提取的颜色变量: " + (colorVariable != null ? colorVariable : "null"));
 
         if (colorVariable != null && variableColors.containsKey(colorVariable)) {
             // 应用颜色到消息
@@ -406,6 +411,8 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             format = format.replace(colorVariable, "");
             // 替换消息内容（%chat% 已改为 %chat%）
             format = format.replace("%chat%", coloredMessage);
+            
+            Bukkit.getConsoleSender().sendMessage("§e[DEBUG processFormat] 处理后的格式: " + format);
         } else {
             format = format.replace("%chat%", message);
         }
