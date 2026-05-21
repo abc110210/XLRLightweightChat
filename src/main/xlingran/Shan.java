@@ -1,15 +1,22 @@
-package xlingran;
+ package xlingran;
 
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -24,6 +31,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     private final Map<String, String> chatFormats = new HashMap<>();
     private final Map<String, String> variableColors = new HashMap<>();
     private final Map<String, String> playerTitles = new HashMap<>();
+    private final Map<String, String> playerCurrentTitle = new HashMap<>(); // 存储玩家当前穿戴的称号
 
     @Override
     public void onEnable() {
@@ -78,6 +86,17 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 return true;
             }
 
+            // 处理 cp 子命令（称号仓库）
+            if (args[0].equalsIgnoreCase("cp")) {
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage(ChatColor.RED + "此命令只能由玩家执行!");
+                    return true;
+                }
+                Player player = (Player) sender;
+                openTitleShop(player);
+                return true;
+            }
+            
             // 处理 reload 子命令
             if (args[0].equalsIgnoreCase("reload")) {
                 reloadPluginConfig();
@@ -110,6 +129,163 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             }
         }
         return false;
+    }
+
+    /**
+     * 打开称号仓库界面
+     */
+    private void openTitleShop(Player player) {
+        Inventory shop = Bukkit.createInventory(null, 54, ChatColor.GREEN + "称号仓库");
+        
+        // 填充黑色玻璃板边框
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta blackMeta = blackGlass.getItemMeta();
+        blackMeta.setDisplayName(" ");
+        blackGlass.setItemMeta(blackMeta);
+        
+        // 第1行（0-8）和第6行（45-53）
+        for (int i = 0; i < 9; i++) {
+            shop.setItem(i, blackGlass);
+            shop.setItem(i + 45, blackGlass);
+        }
+        // 两侧（第2-5行的第1格和第9格）
+        for (int row = 1; row < 5; row++) {
+            shop.setItem(row * 9, blackGlass); // 左侧
+            shop.setItem(row * 9 + 8, blackGlass); // 右侧
+        }
+        
+        // 第6行第5格（索引40）放置品红色玻璃板 - 下一页
+        ItemStack magentaGlass = new ItemStack(Material.MAGENTA_STAINED_GLASS_PANE);
+        ItemMeta magentaMeta = magentaGlass.getItemMeta();
+        magentaMeta.setDisplayName(ChatColor.RED + "下一页");
+        magentaGlass.setItemMeta(magentaMeta);
+        shop.setItem(40, magentaGlass);
+        
+        // 剩余28个格子放置称号（索引：9-17, 18-26, 27-35, 36-38, 39, 41-44）
+        // 实际上应该是第2-5行的中间7格，共28格
+        int[] titleSlots = {
+            10, 11, 12, 13, 14, 15, 16,  // 第2行
+            19, 20, 21, 22, 23, 24, 25,  // 第3行
+            28, 29, 30, 31, 32, 33, 34,  // 第4行
+            37, 38, 39                     // 第5行（前3格）
+        };
+        
+        // 获取玩家拥有的称号
+        List<String> ownedTitles = getPlayerOwnedTitles(player);
+        String currentTitle = playerCurrentTitle.get(player.getUniqueId().toString());
+        
+        // 填充称号物品
+        for (int i = 0; i < Math.min(ownedTitles.size(), titleSlots.length); i++) {
+            String titleId = ownedTitles.get(i);
+            String titleName = playerTitles.get(titleId);
+            
+            if (titleName != null) {
+                ItemStack nameTag = new ItemStack(Material.NAME_TAG);
+                ItemMeta meta = nameTag.getItemMeta();
+                
+                // 处理颜色变量
+                String displayName = processColorVariables(titleName);
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
+                
+                // Lore
+                List<String> lore = new ArrayList<>();
+                if (titleId.equals(currentTitle)) {
+                    lore.add(ChatColor.YELLOW + "当前穿戴该称号");
+                    // 添加附魔特效
+                    meta.addEnchant(Enchantment.UNBREAKING, 1, true);
+                    meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                } else {
+                    lore.add(ChatColor.GREEN + "点击穿戴该称号");
+                }
+                meta.setLore(lore);
+                
+                nameTag.setItemMeta(meta);
+                shop.setItem(titleSlots[i], nameTag);
+            }
+        }
+        
+        player.openInventory(shop);
+    }
+    
+    /**
+     * 获取玩家拥有的所有称号 ID
+     */
+    private List<String> getPlayerOwnedTitles(Player player) {
+        List<String> ownedTitles = new ArrayList<>();
+        
+        for (String id : playerTitles.keySet()) {
+            String permission = "xlr.chat.playertitle." + id;
+            if (player.hasPermission(permission)) {
+                ownedTitles.add(id);
+            }
+        }
+        
+        // 按 ID 数字排序
+        ownedTitles.sort((a, b) -> {
+            try {
+                return Integer.compare(Integer.parseInt(a), Integer.parseInt(b));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        });
+        
+        return ownedTitles;
+    }
+    
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        
+        Player player = (Player) event.getWhoClicked();
+        String invTitle = event.getView().getTitle();
+        
+        // 检查是否是称号仓库界面
+        if (!invTitle.equals(ChatColor.GREEN + "称号仓库")) return;
+        
+        event.setCancelled(true);
+        
+        // 点击的是品红色玻璃板（下一页）
+        if (event.getSlot() == 40) {
+            player.closeInventory();
+            player.sendMessage(ChatColor.YELLOW + "敬请期待更多称号!");
+            return;
+        }
+        
+        // 点击的是称号物品
+        ItemStack clickedItem = event.getCurrentItem();
+        if (clickedItem == null || clickedItem.getType() != Material.NAME_TAG) return;
+        
+        ItemMeta meta = clickedItem.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) return;
+        
+        String displayName = meta.getDisplayName();
+        
+        // 找到对应的称号 ID
+        String selectedTitleId = null;
+        for (Map.Entry<String, String> entry : playerTitles.entrySet()) {
+            String titleName = processColorVariables(entry.getValue());
+            String coloredName = ChatColor.translateAlternateColorCodes('&', titleName);
+            if (coloredName.equals(displayName)) {
+                selectedTitleId = entry.getKey();
+                break;
+            }
+        }
+        
+        if (selectedTitleId != null) {
+            String currentTitle = playerCurrentTitle.get(player.getUniqueId().toString());
+            
+            if (selectedTitleId.equals(currentTitle)) {
+                player.sendMessage(ChatColor.YELLOW + "你已经穿戴着这个称号了!");
+            } else {
+                // 穿戴新称号
+                playerCurrentTitle.put(player.getUniqueId().toString(), selectedTitleId);
+                player.sendMessage(ChatColor.GREEN + "成功穿戴称号: " + displayName);
+                
+                // 重新打开界面
+                player.closeInventory();
+                Bukkit.getScheduler().runTaskLater(this, () -> openTitleShop(player), 2L);
+            }
+        }
     }
 
     private void reloadPluginConfig() {
@@ -330,12 +506,14 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     }
 
     private String getPlayerTitle(Player player) {
-        // 从最高 ID 开始检查，找到玩家拥有的最高权限称号
+        // 从最高 ID (56) 开始检查，找到玩家拥有的最高权限称号
         // 将 ID 按数字大小降序排序
         List<String> sortedIds = new ArrayList<>(playerTitles.keySet());
         sortedIds.sort((a, b) -> {
             try {
-                return Integer.compare(Integer.parseInt(b), Integer.parseInt(a));
+                int idA = Integer.parseInt(a);
+                int idB = Integer.parseInt(b);
+                return Integer.compare(idB, idA); // 降序排序
             } catch (NumberFormatException e) {
                 return 0;
             }
@@ -346,6 +524,8 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String permission = "xlr.chat.playertitle." + id;
             if (player.hasPermission(permission)) {
                 String title = playerTitles.get(id);
+                // 处理称号中的颜色变量（如 %color2%）
+                title = processColorVariables(title);
                 return ChatColor.translateAlternateColorCodes('&', title);
             }
         }
@@ -353,9 +533,49 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 默认称号（ID 1）
         String defaultTitle = playerTitles.get("1");
         if (defaultTitle != null) {
+            // 处理称号中的颜色变量
+            defaultTitle = processColorVariables(defaultTitle);
             return ChatColor.translateAlternateColorCodes('&', defaultTitle);
         }
         
         return "";
+    }
+
+    /**
+     * 处理字符串中的颜色变量（如 %color1%、%color2%）
+     */
+    private String processColorVariables(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        // 替换所有已定义的颜色变量
+        for (Map.Entry<String, String> entry : variableColors.entrySet()) {
+            String variable = entry.getKey(); // 如 %color1%
+            String colorConfig = entry.getValue(); // 如 #ff9a9e
+
+            // 如果文本中包含该变量
+            if (text.contains(variable)) {
+                // 如果是渐变色
+                if (colorConfig.contains("-")) {
+                    String[] colors = colorConfig.split("-");
+                    if (colors.length == 2) {
+                        String startColor = colors[0].replace("#", "");
+                        String endColor = colors[1].replace("#", "");
+                        // 暂时用起始颜色替换
+                        ChatColor color = ChatColor.of("#" + startColor);
+                        text = text.replace(variable, color.toString());
+                    }
+                }
+                // 如果是单一颜色
+                else if (colorConfig.startsWith("#")) {
+                    String hexColor = colorConfig.replace("#", "");
+                    ChatColor color = ChatColor.of("#" + hexColor);
+                    text = text.replace(variable, color.toString());
+                }
+            }
+        }
+
+        return text;
     }
 }
