@@ -70,7 +70,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 return true;
             } else {
                 sender.sendMessage(ChatColor.RED + "未知的子命令: " + args[0]);
-                sender.sendMessage(ChatColor.YELLOW + "用法: /xlrchat reload");
                 return true;
             }
         }
@@ -181,44 +180,35 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 查找%message%之前的颜色变量
         // 例如：%messageop%%message%中的%messageop%
         int messageIndex = format.indexOf("%message%");
-        Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 格式: " + format);
-        Bukkit.getConsoleSender().sendMessage("§e[DEBUG] %message% 位置: " + messageIndex);
 
         if (messageIndex == -1) {
-            Bukkit.getConsoleSender().sendMessage("§c[DEBUG] 没有找到 %message%");
             return null;
         }
 
         // 查找%message%之前的最后一个%...%
         String beforeMessage = format.substring(0, messageIndex);
-        Bukkit.getConsoleSender().sendMessage("§e[DEBUG] %message% 前的内容: " + beforeMessage);
 
-        // 查找最后一个完整的变量
-        int lastPercent = beforeMessage.lastIndexOf("%");
-        Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 最后一个 % 的位置: " + lastPercent);
-
-        if (lastPercent != -1) {
-            int nextPercent = beforeMessage.indexOf("%", lastPercent + 1);
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 下一个 % 的位置: " + nextPercent);
-
-            if (nextPercent != -1) {
-                String variable = beforeMessage.substring(lastPercent, nextPercent + 1);
-                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 提取的变量: " + variable);
-                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] variableColors 键名: " + variableColors.keySet());
-
-                // 检查是否是颜色变量（在Variable中定义且不是%player%或%message%）
-                if (variableColors.containsKey(variable) &&
-                    !variable.equals("%player%") &&
-                    !variable.equals("%message%")) {
-                    Bukkit.getConsoleSender().sendMessage("§a[DEBUG] 成功找到颜色变量: " + variable);
-                    return variable;
-                } else {
-                    Bukkit.getConsoleSender().sendMessage("§c[DEBUG] 变量不在 variableColors 中，或为 %player%/%message%");
-                }
-            }
+        // 从后往前查找，找到最后一个完整的%...%变量
+        int lastEndPercent = beforeMessage.lastIndexOf("%");
+        if (lastEndPercent == -1) {
+            return null;
         }
 
-        Bukkit.getConsoleSender().sendMessage("§c[DEBUG] 没有找到颜色变量");
+        // 从lastEndPercent往前找配对的开始%
+        int lastStartPercent = beforeMessage.lastIndexOf("%", lastEndPercent - 1);
+        if (lastStartPercent == -1) {
+            return null;
+        }
+
+        String variable = beforeMessage.substring(lastStartPercent, lastEndPercent + 1);
+
+        // 检查是否是颜色变量（在Variable中定义且不是%player%或%message%）
+        if (variableColors.containsKey(variable) &&
+            !variable.equals("%player%") &&
+            !variable.equals("%message%")) {
+            return variable;
+        }
+
         return null;
     }
 
