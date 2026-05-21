@@ -1,6 +1,7 @@
 package xlingran;
 
 import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -37,12 +38,12 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 注册命令执行器
         getCommand("xlrchat").setExecutor(this);
 
-        getLogger().info("插件已启用!");
+        Bukkit.getConsoleSender().sendMessage("§a[XLRLightweightChat] 插件已启用!");
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("该插件已卸载");
+        Bukkit.getConsoleSender().sendMessage("§c[XLRLightweightChat] 该插件已卸载");
     }
 
     @Override
@@ -96,12 +97,12 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 String format = messageSection.getString(key);
                 if (format != null && !format.isEmpty()) {
                     chatFormats.put(key, format);
-                    getLogger().info("已加载聊天格式: " + key + " -> " + format);
+                    Bukkit.getConsoleSender().sendMessage("§e[XLRLightweightChat] 已加载聊天格式: " + key + " -> " + format);
                 }
             }
         }
 
-        getLogger().info("共加载了 " + chatFormats.size() + " 个聊天格式");
+        Bukkit.getConsoleSender().sendMessage("§e[XLRLightweightChat] 共加载了 " + chatFormats.size() + " 个聊天格式");
     }
 
     private void loadVariableColors() {
@@ -113,12 +114,12 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 String colorConfig = variableSection.getString(variable);
                 if (colorConfig != null && !colorConfig.isEmpty()) {
                     variableColors.put(variable, colorConfig);
-                    getLogger().info("已加载变量颜色: " + variable + " -> " + colorConfig);
+                    Bukkit.getConsoleSender().sendMessage("§e[XLRLightweightChat] 已加载变量颜色: " + variable + " -> " + colorConfig);
                 }
             }
         }
 
-        getLogger().info("共加载了 " + variableColors.size() + " 个变量颜色配置");
+        Bukkit.getConsoleSender().sendMessage("§e[XLRLightweightChat] 共加载了 " + variableColors.size() + " 个变量颜色配置");
     }
 
     @EventHandler
@@ -138,7 +139,13 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 // 处理自定义变量和消息
                 String result = processFormat(format, event.getMessage());
 
-                event.setFormat(result);
+                // 取消默认聊天事件
+                event.setCancelled(true);
+                
+                // 手动广播格式化后的消息
+                String finalMessage = ChatColor.translateAlternateColorCodes('&', result);
+                Bukkit.broadcastMessage(finalMessage);
+                
                 return; // 找到匹配的格式后直接返回
             }
         }
