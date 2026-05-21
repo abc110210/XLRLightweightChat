@@ -368,15 +368,31 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (matchedFormat != null) {
             String format = matchedFormat;
 
-            // 先替换玩家称号（%ChatPrefix%）- 称号已经包含完整的颜色代码
+            // 先提取颜色变量（在替换其他占位符之前）
+            String colorVariable = extractColorVariable(format);
+            String colorConfig = null;
+            if (colorVariable != null && variableColors.containsKey(colorVariable)) {
+                colorConfig = variableColors.get(colorVariable);
+                // 从格式中移除颜色变量占位符
+                format = format.replace(colorVariable, "");
+            }
+
+            // 再替换玩家称号（%ChatPrefix%）- 称号已经包含完整的颜色代码
             String playerTitle = getPlayerTitle(player);
             format = format.replace("%ChatPrefix%", playerTitle);
 
             // 再替换玩家名称
             format = format.replace("%player%", player.getDisplayName());
 
-            // 处理自定义变量和消息
-            String result = processFormat(format, event.getMessage());
+            // 处理消息内容
+            String result;
+            if (colorConfig != null) {
+                // 应用颜色到消息
+                String coloredMessage = applyGradientColor(event.getMessage(), colorConfig);
+                result = format.replace("%chat%", coloredMessage);
+            } else {
+                result = format.replace("%chat%", event.getMessage());
+            }
 
             // 取消默认聊天事件
             event.setCancelled(true);
@@ -387,22 +403,13 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             // 注意：必须先转换传统颜色代码，因为 16 进制颜色已经是 §x§... 格式
             String finalMessage = ChatColor.translateAlternateColorCodes('&', result);
             
-            // 调试输出：显示最终消息的字符表示
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 原始消息: " + result);
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 处理后消息: " + finalMessage);
-            
             Bukkit.broadcastMessage(finalMessage);
         }
     }
 
     private String processFormat(String format, String message) {
-        // 调试输出：显示处理前的格式
-        Bukkit.getConsoleSender().sendMessage("§e[DEBUG processFormat] 输入格式: " + format);
-        
         // 查找格式中所有的颜色变量
         String colorVariable = extractColorVariable(format);
-        
-        Bukkit.getConsoleSender().sendMessage("§e[DEBUG processFormat] 提取的颜色变量: " + (colorVariable != null ? colorVariable : "null"));
 
         if (colorVariable != null && variableColors.containsKey(colorVariable)) {
             // 应用颜色到消息
@@ -411,8 +418,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             format = format.replace(colorVariable, "");
             // 替换消息内容（%chat% 已改为 %chat%）
             format = format.replace("%chat%", coloredMessage);
-            
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG processFormat] 处理后的格式: " + format);
         } else {
             format = format.replace("%chat%", message);
         }
