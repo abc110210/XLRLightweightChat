@@ -13,6 +13,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,25 +52,56 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (command.getName().equalsIgnoreCase("xlrchat")) {
             // 检查权限
             if (!sender.hasPermission("xlr.chat.reload")) {
-                sender.sendMessage(ChatColor.RED + "你没有权限使用此命令!");
+                // 从配置读取无权限提示
+                String noPermissionMsg = getConfig().getString("Message.NoPermission");
+                if (noPermissionMsg != null && !noPermissionMsg.isEmpty()) {
+                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermissionMsg));
+                } else {
+                    sender.sendMessage(ChatColor.RED + "你没有权限执行此命令");
+                }
                 return true;
             }
 
             // 检查参数
             if (args.length == 0) {
-                sender.sendMessage(ChatColor.YELLOW + "用法: /xlrchat reload");
+                // 从配置读取无参数提示
+                String noArgsMsg = getConfig().getString("Message.NoArgs");
+                if (noArgsMsg != null && !noArgsMsg.isEmpty()) {
+                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', noArgsMsg));
+                } else {
+                    sender.sendMessage(ChatColor.YELLOW + "用法: /xlrchat reload");
+                }
                 return true;
             }
 
             // 处理 reload 子命令
             if (args[0].equalsIgnoreCase("reload")) {
                 reloadPluginConfig();
-                sender.sendMessage(ChatColor.GREEN + "配置已重新加载!");
-                sender.sendMessage(ChatColor.AQUA + "已加载 " + chatFormats.size() + " 个聊天格式");
-                sender.sendMessage(ChatColor.AQUA + "已加载 " + variableColors.size() + " 个变量颜色配置");
+                
+                // 从配置读取 reload 输出消息
+                List<String> reloadMessages = getConfig().getStringList("Command.reload");
+                if (reloadMessages != null && !reloadMessages.isEmpty()) {
+                    for (String msg : reloadMessages) {
+                        // 替换占位符
+                        String formattedMsg = msg.replace("%chat_format%", String.valueOf(chatFormats.size()))
+                                                 .replace("%color_config%", String.valueOf(variableColors.size()));
+                        sender.sendMessage(ChatColor.translateAlternateColorCodes('&', formattedMsg));
+                    }
+                } else {
+                    // 默认输出
+                    sender.sendMessage(ChatColor.GREEN + "配置已重新加载!");
+                    sender.sendMessage(ChatColor.AQUA + "已加载 " + chatFormats.size() + " 个聊天格式");
+                    sender.sendMessage(ChatColor.AQUA + "已加载 " + variableColors.size() + " 个变量颜色配置");
+                }
                 return true;
             } else {
-                sender.sendMessage(ChatColor.RED + "未知的子命令: " + args[0]);
+                // 从配置读取未知子命令提示
+                String unknownSubCmdMsg = getConfig().getString("Message.UnknownSubCmd");
+                if (unknownSubCmdMsg != null && !unknownSubCmdMsg.isEmpty()) {
+                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', unknownSubCmdMsg + args[0]));
+                } else {
+                    sender.sendMessage(ChatColor.RED + "未知的子命令: " + args[0]);
+                }
                 return true;
             }
         }
@@ -90,10 +122,11 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     private void loadChatFormats() {
         chatFormats.clear();
 
-        ConfigurationSection messageSection = getConfig().getConfigurationSection("Message");
-        if (messageSection != null) {
-            for (String key : messageSection.getKeys(false)) {
-                String format = messageSection.getString(key);
+        // 从 Chat 配置段加载（原 Message 改名为 Chat）
+        ConfigurationSection chatSection = getConfig().getConfigurationSection("Chat");
+        if (chatSection != null) {
+            for (String key : chatSection.getKeys(false)) {
+                String format = chatSection.getString(key);
                 if (format != null && !format.isEmpty()) {
                     chatFormats.put(key, format);
                 }
@@ -106,20 +139,14 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
         ConfigurationSection variableSection = getConfig().getConfigurationSection("Variable");
         if (variableSection != null) {
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 找到 Variable 配置段");
             for (String variable : variableSection.getKeys(false)) {
                 String colorConfig = variableSection.getString(variable);
                 if (colorConfig != null && !colorConfig.isEmpty()) {
                     // 自动添加 % 包裹，使 color1 变成 %color1%
                     String formattedVariable = "%" + variable + "%";
                     variableColors.put(formattedVariable, colorConfig);
-                    Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 已加载: " + formattedVariable + " -> " + colorConfig);
                 }
             }
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 总共加载了 " + variableColors.size() + " 个变量颜色");
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 所有变量键名: " + variableColors.keySet());
-        } else {
-            Bukkit.getConsoleSender().sendMessage("§c[DEBUG] 没有找到 Variable 配置段！");
         }
     }
 
@@ -165,47 +192,46 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             format = format.replace(colorVariable, "");
         }
 
-        // 替换消息内容
+        // 替换消息内容（%message% 已改为 %chat%）
         if (colorVariable != null && variableColors.containsKey(colorVariable)) {
             String coloredMessage = applyGradientColor(message, variableColors.get(colorVariable));
-            format = format.replace("%message%", coloredMessage);
+            format = format.replace("%chat%", coloredMessage);
         } else {
-            format = format.replace("%message%", message);
+            format = format.replace("%chat%", message);
         }
 
         return format;
     }
 
     private String extractColorVariable(String format) {
-        // 查找%message%之前的颜色变量
-        // 例如：%messageop%%message%中的%messageop%
-        int messageIndex = format.indexOf("%message%");
+        // 查找%chat%之前的颜色变量（%message% 已改为 %chat%）
+        int chatIndex = format.indexOf("%chat%");
 
-        if (messageIndex == -1) {
+        if (chatIndex == -1) {
             return null;
         }
 
-        // 查找%message%之前的最后一个%...%
-        String beforeMessage = format.substring(0, messageIndex);
+        // 查找%chat%之前的最后一个%...%
+        String beforeChat = format.substring(0, chatIndex);
 
         // 从后往前查找，找到最后一个完整的%...%变量
-        int lastEndPercent = beforeMessage.lastIndexOf("%");
+        int lastEndPercent = beforeChat.lastIndexOf("%");
         if (lastEndPercent == -1) {
             return null;
         }
 
         // 从lastEndPercent往前找配对的开始%
-        int lastStartPercent = beforeMessage.lastIndexOf("%", lastEndPercent - 1);
+        int lastStartPercent = beforeChat.lastIndexOf("%", lastEndPercent - 1);
         if (lastStartPercent == -1) {
             return null;
         }
 
-        String variable = beforeMessage.substring(lastStartPercent, lastEndPercent + 1);
+        String variable = beforeChat.substring(lastStartPercent, lastEndPercent + 1);
 
-        // 检查是否是颜色变量（在Variable中定义且不是%player%或%message%）
+        // 检查是否是颜色变量（在Variable中定义且不是%player%或%chat%）
         if (variableColors.containsKey(variable) &&
             !variable.equals("%player%") &&
-            !variable.equals("%message%")) {
+            !variable.equals("%chat%")) {
             return variable;
         }
 
