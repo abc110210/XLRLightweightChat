@@ -21,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
 
 public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
-    private final Map<String, String> chatFormats = new HashMap<>();
+    private final Map<String, String> chatFormats = new LinkedHashMap<>();
     private final Map<String, String> variableColors = new HashMap<>();
     private final Map<String, String> playerTitles = new HashMap<>();
     private final Map<String, String> playerCurrentTitle = new HashMap<>(); // 存储玩家当前穿戴的称号
@@ -348,9 +349,14 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         Player player = event.getPlayer();
         String matchedFormat = null;
 
-        // 遍历所有聊天格式，找到玩家有权限的第一个格式
-        for (Map.Entry<String, String> entry : chatFormats.entrySet()) {
-            // 权限格式：xlr.chat.配置文件中的键名（如 xlr.chat.op）
+        // 从下往上遍历所有聊天格式，找到玩家有权限的第一个格式
+        // 将 LinkedHashMap 转换为 ArrayList 以支持逆序遍历
+        List<Map.Entry<String, String>> formatList = new ArrayList<>(chatFormats.entrySet());
+        
+        // 逆序遍历（从配置文件的底部开始）
+        for (int i = formatList.size() - 1; i >= 0; i--) {
+            Map.Entry<String, String> entry = formatList.get(i);
+            // 权限格式：xlr.chat.配置文件中的键名（如 xlr.chat.svip）
             String permission = "xlr.chat." + entry.getKey();
 
             if (player.hasPermission(permission)) {
@@ -368,21 +374,14 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (matchedFormat != null) {
             String format = matchedFormat;
 
-            // 调试：显示原始格式
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 原始格式: " + format);
-
             // 先提取颜色变量（在替换其他占位符之前）
             String colorVariable = extractColorVariable(format);
             String colorConfig = null;
             
-            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 提取的颜色变量: " + (colorVariable != null ? colorVariable : "null"));
-            
             if (colorVariable != null && variableColors.containsKey(colorVariable)) {
                 colorConfig = variableColors.get(colorVariable);
-                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 颜色配置: " + colorConfig);
                 // 从格式中移除颜色变量占位符
                 format = format.replace(colorVariable, "");
-                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 移除变量后的格式: " + format);
             }
 
             // 再替换玩家称号（%ChatPrefix%）- 称号已经包含完整的颜色代码
@@ -397,7 +396,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             if (colorConfig != null) {
                 // 应用颜色到消息
                 String coloredMessage = applyGradientColor(event.getMessage(), colorConfig);
-                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 染色后的消息: " + coloredMessage);
                 result = format.replace("%chat%", coloredMessage);
             } else {
                 result = format.replace("%chat%", event.getMessage());
