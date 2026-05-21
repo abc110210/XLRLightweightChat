@@ -23,6 +23,9 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
     @Override
     public void onEnable() {
+        // 保存默认配置文件（如果不存在）
+        saveDefaultConfig();
+        
         // 从配置文件读取所有聊天格式
         loadChatFormats();
         // 从配置文件读取变量颜色配置
