@@ -386,6 +386,11 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             // 只需要转换 & 颜色代码即可
             // 注意：必须先转换传统颜色代码，因为 16 进制颜色已经是 §x§... 格式
             String finalMessage = ChatColor.translateAlternateColorCodes('&', result);
+            
+            // 调试输出：显示最终消息的字符表示
+            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 原始消息: " + result);
+            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 处理后消息: " + finalMessage);
+            
             Bukkit.broadcastMessage(finalMessage);
         }
     }
@@ -455,9 +460,10 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         }
         // 如果是单一颜色
         else if (colorConfig.startsWith("#")) {
-            String hexColor = colorConfig.replace("#", "");
-            ChatColor color = ChatColor.of("#" + hexColor);
-            return color + text;
+            // 直接使用 ChatColor.of() 并获取其内部表示
+            ChatColor color = ChatColor.of(colorConfig);
+            // 使用 §x§R§R§G§G§B§B 格式
+            return color.toString() + text;
         }
 
         return text;
@@ -485,6 +491,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String hexColor = String.format("#%02x%02x%02x", r, g, b);
             ChatColor chatColor = ChatColor.of(hexColor);
 
+            // 直接使用 ChatColor 对象，不要使用 toString()
             result.append(chatColor).append(text.charAt(i));
         }
 
