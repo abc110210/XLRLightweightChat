@@ -368,13 +368,21 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (matchedFormat != null) {
             String format = matchedFormat;
 
+            // 调试：显示原始格式
+            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 原始格式: " + format);
+
             // 先提取颜色变量（在替换其他占位符之前）
             String colorVariable = extractColorVariable(format);
             String colorConfig = null;
+            
+            Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 提取的颜色变量: " + (colorVariable != null ? colorVariable : "null"));
+            
             if (colorVariable != null && variableColors.containsKey(colorVariable)) {
                 colorConfig = variableColors.get(colorVariable);
+                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 颜色配置: " + colorConfig);
                 // 从格式中移除颜色变量占位符
                 format = format.replace(colorVariable, "");
+                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 移除变量后的格式: " + format);
             }
 
             // 再替换玩家称号（%ChatPrefix%）- 称号已经包含完整的颜色代码
@@ -389,6 +397,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             if (colorConfig != null) {
                 // 应用颜色到消息
                 String coloredMessage = applyGradientColor(event.getMessage(), colorConfig);
+                Bukkit.getConsoleSender().sendMessage("§e[DEBUG] 染色后的消息: " + coloredMessage);
                 result = format.replace("%chat%", coloredMessage);
             } else {
                 result = format.replace("%chat%", event.getMessage());
