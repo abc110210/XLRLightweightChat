@@ -8,7 +8,7 @@ description: 一款多功能聊天插件
 commands:
   xlrchat:
     description: 重载插件配置
-    usage: /<command> reload
+    usage: /<command> reload/cp
     permission: xlr.chat.reload
 
 permissions:
