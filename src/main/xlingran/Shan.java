@@ -77,6 +77,8 @@ public class Shan extends JavaPlugin implements Listener {
 
         String format = null;
         for (String key : chatSection.getKeys(false)) {
+            if (key.equals("default")) continue;
+
             String permission = "xlr.chat." + key;
             if (player.hasPermission(permission)) {
                 format = chatSection.getString(key);
