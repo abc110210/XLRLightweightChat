@@ -11,13 +11,15 @@ Chat:
 Variable:
   color1: "#e4afcb-#7edbdc"
   color2: "#e4afcb-#eef1f5"
+  color3: "#00c6fb-#005bea"
 
-# 最多拥有 56 个称号，最少 1 个
+# 最多拥有 56 个称号，最少 1 个，也就是两个 Gui容量
 # 优先级从上往下开始检查，权限节点是 xlr.chat.名称，玩家默认拥有 xlr.chat.playertitle.1 权限
 # 前缀格式 ID: "前缀"，ID只能由数字排序，不能重复
 PlayerTitle:
   1: "&b[居民]"
   2: "%color2%[管理员]"
+  3: "%color3%[VIP]"
 
 # 输入命令，命令输出提示
 Command:
