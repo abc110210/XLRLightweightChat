@@ -519,20 +519,23 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
         StringBuilder result = new StringBuilder();
         int length = text.length();
-
-        // 设置最小渐变长度，确保短文本也能看到明显的渐变效果
-        int minGradientLength = Math.max(length, 8); // 至少8个字符完成一次渐变
+        
+        // 防止除零错误
+        if (length <= 1) {
+            // 如果只有一个字符或空文本，直接应用起始颜色
+            ChatColor chatColor = ChatColor.of("#" + startHex);
+            return chatColor + text;
+        }
 
         // 解析起始和结束颜色
         java.awt.Color startColor = parseHexColor(startHex);
         java.awt.Color endColor = parseHexColor(endHex);
 
         // 为每个字符应用渐变色
+        // 第一个字符用起始色，最后一个字符用结束色，中间字符均匀过渡
         for (int i = 0; i < length; i++) {
-            // 使用 minGradientLength 计算渐变比例，而不是实际文本长度
-            float ratio = (float) i / (minGradientLength - 1);
-            // 确保 ratio 不超过 1.0
-            if (ratio > 1.0f) ratio = 1.0f;
+            // 直接按照实际文本长度计算渐变比例
+            float ratio = (float) i / (length - 1);
             
             int r = (int) (startColor.getRed() + (endColor.getRed() - startColor.getRed()) * ratio);
             int g = (int) (startColor.getGreen() + (endColor.getGreen() - startColor.getGreen()) * ratio);
