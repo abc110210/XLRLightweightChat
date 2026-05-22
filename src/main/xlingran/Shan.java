@@ -865,10 +865,19 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         }
         // 如果是单一颜色
         else if (colorConfig.startsWith("#")) {
-            // 直接使用 ChatColor.of() 并获取其内部表示
-            ChatColor color = ChatColor.of(colorConfig);
-            // 使用 §x§R§R§G§G§B§B 格式
-            return color.toString() + text;
+            String hexColor = colorConfig.replace("#", "");
+            // 手动生成 §x§R§R§G§G§B§B 格式
+            int r = Integer.parseInt(hexColor.substring(0, 2), 16);
+            int g = Integer.parseInt(hexColor.substring(2, 4), 16);
+            int b = Integer.parseInt(hexColor.substring(4, 6), 16);
+            String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
+                Character.forDigit((r >> 4) & 0xF, 16),
+                Character.forDigit(r & 0xF, 16),
+                Character.forDigit((g >> 4) & 0xF, 16),
+                Character.forDigit(g & 0xF, 16),
+                Character.forDigit((b >> 4) & 0xF, 16),
+                Character.forDigit(b & 0xF, 16));
+            return hexCode + text;
         }
 
         return text;
@@ -891,8 +900,19 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (!colorConfig.contains("-")) {
             // 单一颜色，直接应用
             if (colorConfig.startsWith("#")) {
-                ChatColor color = ChatColor.of(colorConfig);
-                return color + text;
+                String hexColor = colorConfig.replace("#", "");
+                // 手动生成 §x§R§R§G§G§B§B 格式
+                int r = Integer.parseInt(hexColor.substring(0, 2), 16);
+                int g = Integer.parseInt(hexColor.substring(2, 4), 16);
+                int b = Integer.parseInt(hexColor.substring(4, 6), 16);
+                String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
+                    Character.forDigit((r >> 4) & 0xF, 16),
+                    Character.forDigit(r & 0xF, 16),
+                    Character.forDigit((g >> 4) & 0xF, 16),
+                    Character.forDigit(g & 0xF, 16),
+                    Character.forDigit((b >> 4) & 0xF, 16),
+                    Character.forDigit(b & 0xF, 16));
+                return hexCode + text;
             }
             return text;
         }
@@ -1028,8 +1048,15 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 防止除零错误
         if (length == 1) {
             // 如果只有一个字符，直接应用起始颜色
-            ChatColor chatColor = ChatColor.of("#" + startHex);
-            return chatColor + text;
+            java.awt.Color startColor = parseHexColor(startHex);
+            String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
+                Character.forDigit((startColor.getRed() >> 4) & 0xF, 16),
+                Character.forDigit(startColor.getRed() & 0xF, 16),
+                Character.forDigit((startColor.getGreen() >> 4) & 0xF, 16),
+                Character.forDigit(startColor.getGreen() & 0xF, 16),
+                Character.forDigit((startColor.getBlue() >> 4) & 0xF, 16),
+                Character.forDigit(startColor.getBlue() & 0xF, 16));
+            return hexCode + text;
         }
 
         // 解析起始和结束颜色
@@ -1238,8 +1265,18 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 // 如果是单一颜色
                 else if (colorConfig.startsWith("#")) {
                     String hexColor = colorConfig.replace("#", "");
-                    // 转换为 §x 格式的 16 进制颜色
-                    text = text.replace(variable, net.md_5.bungee.api.ChatColor.of("#" + hexColor).toString());
+                    // 手动生成 §x§R§R§G§G§B§B 格式
+                    int r = Integer.parseInt(hexColor.substring(0, 2), 16);
+                    int g = Integer.parseInt(hexColor.substring(2, 4), 16);
+                    int b = Integer.parseInt(hexColor.substring(4, 6), 16);
+                    String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
+                        Character.forDigit((r >> 4) & 0xF, 16),
+                        Character.forDigit(r & 0xF, 16),
+                        Character.forDigit((g >> 4) & 0xF, 16),
+                        Character.forDigit(g & 0xF, 16),
+                        Character.forDigit((b >> 4) & 0xF, 16),
+                        Character.forDigit(b & 0xF, 16));
+                    text = text.replace(variable, hexCode);
                 }
             }
         }
