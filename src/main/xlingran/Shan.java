@@ -759,19 +759,48 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     
     /**
      * 获取物品的显示名称
+     * 格式: [物品名称X数量]
      */
     private String getItemDisplayName(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) {
-            return "空手";
+            return "[空手]";
         }
         
+        String displayName;
         ItemMeta meta = item.getItemMeta();
+        
+        // 获取物品名称
         if (meta != null && meta.hasDisplayName()) {
-            return meta.getDisplayName();
+            // 使用自定义名称（保留颜色）
+            displayName = meta.getDisplayName();
+        } else {
+            // 使用物品类型的友好名称（首字母大写，其余小写）
+            String typeName = item.getType().name();
+            String[] parts = typeName.split("_");
+            StringBuilder friendlyName = new StringBuilder();
+            for (String part : parts) {
+                if (friendlyName.length() > 0) {
+                    friendlyName.append(" ");
+                }
+                if (part.length() > 0) {
+                    friendlyName.append(part.substring(0, 1).toUpperCase())
+                               .append(part.substring(1).toLowerCase());
+                }
+            }
+            // 使用 §f 白色，避免被聊天颜色覆盖
+            displayName = "§f" + friendlyName.toString();
         }
         
-        // 如果没有自定义名称，使用物品类型的本地化名称
-        return item.getType().toString().replace("_", " ");
+        // 获取数量
+        int amount = item.getAmount();
+        
+        // 格式: [物品名称X数量]
+        // 使用 §r 重置颜色，确保括号和 X 符号使用默认颜色
+        if (amount > 1) {
+            return "§r[" + displayName + " §rX " + amount + "§r]";
+        } else {
+            return "§r[" + displayName + "§r]";
+        }
     }
 
     private String applyGradientColor(String text, String colorConfig) {
