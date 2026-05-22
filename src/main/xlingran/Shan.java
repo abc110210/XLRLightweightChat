@@ -634,10 +634,13 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         String message = event.getMessage();
         
         // 处理 [item] 占位符 - 替换为手里拿着的物品
+        // 注意：必须在应用渐变颜色之前处理，否则物品颜色会被覆盖
         boolean displayInHand = getConfig().getBoolean("DisplayInHand", true);
         if (displayInHand && message.contains("[item]")) {
             ItemStack itemInHand = player.getInventory().getItemInMainHand();
             String itemName = getItemDisplayName(itemInHand);
+            // 直接替换，物品名称已经包含完整的颜色代码（§格式）
+            // 这些颜色代码不会被后续的渐变颜色处理覆盖
             message = message.replace("[item]", itemName);
         }
         
@@ -685,6 +688,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String result;
             if (colorConfig != null) {
                 // 应用颜色到消息
+                // 注意：message 已经包含替换后的 [item]，其中的颜色代码不会被覆盖
                 String coloredMessage = applyGradientColor(message, colorConfig);
                 result = format.replace("%chat%", coloredMessage);
             } else {
@@ -760,10 +764,11 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     /**
      * 获取物品的显示名称
      * 格式: [物品名称X数量]
+     * 使用 § 格式的颜色代码，避免被渐变颜色覆盖
      */
     private String getItemDisplayName(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) {
-            return "&r[空手]&r";
+            return "§r[空手]§r";
         }
         
         String displayName;
@@ -772,7 +777,8 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 获取物品名称
         if (meta != null && meta.hasDisplayName()) {
             // 使用自定义名称（保留颜色）
-            displayName = meta.getDisplayName();
+            // 如果包含 & 颜色代码，转换为 § 格式
+            displayName = ChatColor.translateAlternateColorCodes('&', meta.getDisplayName());
         } else {
             // 使用物品类型的友好名称（首字母大写，其余小写）
             String typeName = item.getType().name();
@@ -787,19 +793,20 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                                .append(part.substring(1).toLowerCase());
                 }
             }
-            // 使用 &f 白色，避免被聊天颜色覆盖
-            displayName = "&f" + friendlyName.toString();
+            // 使用 §f 白色，避免被聊天颜色覆盖
+            displayName = "§f" + friendlyName.toString();
         }
         
         // 获取数量
         int amount = item.getAmount();
         
         // 格式: [物品名称X数量]
-        // 使用 &r 重置颜色，确保括号和 X 符号使用默认颜色
+        // 使用 §r 重置颜色，确保括号和 X 符号使用默认颜色
+        // 使用 § 格式而不是 & 格式，避免被 ChatColor.translateAlternateColorCodes() 处理
         if (amount > 1) {
-            return "&r[" + displayName + " &rX " + amount + "&r]";
+            return "§r[" + displayName + " §rX " + amount + "§r]";
         } else {
-            return "&r[" + displayName + "&r]";
+            return "§r[" + displayName + "§r]";
         }
     }
 
