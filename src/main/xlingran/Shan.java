@@ -689,7 +689,8 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
             // 再替换玩家称号（%ChatPrefix%）- 称号已经包含完整的颜色代码
             String playerTitle = getPlayerTitle(player);
-            format = format.replace("%ChatPrefix%", playerTitle);
+            // 在称号后面添加重置符，防止后面的颜色代码影响称号
+            format = format.replace("%ChatPrefix%", playerTitle + "§r");
 
             // 再替换玩家名称
             format = format.replace("%player%", player.getDisplayName());
@@ -1196,6 +1197,12 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             title = processColorVariables(title);
             // 再转换传统颜色代码（& -> §）
             title = ChatColor.translateAlternateColorCodes('&', title);
+            // 添加调试信息
+            System.out.println("[DEBUG] 称号处理 - ID: " + currentTitleId);
+            System.out.println("[DEBUG] 原始称号: " + playerTitles.get(currentTitleId));
+            System.out.println("[DEBUG] 处理后称号: " + title);
+            System.out.println("[DEBUG] 称号长度: " + title.length());
+            System.out.println("[DEBUG] 称号字节: " + java.util.Arrays.toString(title.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
             return title;
         }
         
