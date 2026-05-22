@@ -635,12 +635,17 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         
         // 处理 [item] 占位符
         boolean displayInHand = getConfig().getBoolean("DisplayInHand", true);
+        String itemPlaceholder = null;
+        String itemName = null;
+        int itemPosition = -1;
+        
         if (displayInHand && message.contains("[item]")) {
             ItemStack itemInHand = player.getInventory().getItemInMainHand();
-            String itemName = getItemDisplayName(itemInHand);
-            // 直接替换 [item] 为物品名称
-            // 物品名称使用 § 格式颜色代码，applyGradient 会自动跳过
-            message = message.replace("[item]", itemName);
+            itemName = getItemDisplayName(itemInHand);
+            // 使用唯一占位符
+            itemPlaceholder = "__ITEM_PLACEHOLDER__";
+            itemPosition = message.indexOf("[item]");
+            message = message.replace("[item]", itemPlaceholder);
         }
         
         String matchedFormat = null;
@@ -687,10 +692,32 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String result;
             if (colorConfig != null) {
                 // 应用渐变颜色到消息
-                // applyGradient 会自动跳过 § 格式的颜色代码
-                String coloredMessage = applyGradientColor(message, colorConfig);
+                // 先将占位符移除，避免被渐变颜色处理
+                String messageWithoutItem = message;
+                int visiblePosition = itemPosition;
+                
+                if (itemPlaceholder != null && itemPosition >= 0) {
+                    // 计算占位符在移除后的位置
+                    messageWithoutItem = message.replace(itemPlaceholder, "");
+                    // 占位符位置不变，因为我们只是在后面插入
+                }
+                
+                // 应用渐变颜色
+                String coloredMessage = applyGradientColor(messageWithoutItem, colorConfig);
+                
+                // 在原位置插入物品名称
+                if (itemPosition >= 0 && itemName != null && itemPosition <= coloredMessage.length()) {
+                    coloredMessage = coloredMessage.substring(0, itemPosition) + 
+                                    itemName + 
+                                    coloredMessage.substring(itemPosition);
+                }
+                
                 result = format.replace("%chat%", coloredMessage);
             } else {
+                // 没有渐变颜色，直接替换
+                if (itemPlaceholder != null && itemName != null) {
+                    message = message.replace(itemPlaceholder, itemName);
+                }
                 result = format.replace("%chat%", message);
             }
 
