@@ -826,20 +826,19 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                                    .append(part.substring(1).toLowerCase());
                     }
                 }
-                displayName = "§f" + friendlyName.toString();
+                displayName = "&f" + friendlyName.toString();
             }
         }
         
         // 获取数量
         int amount = item.getAmount();
         
-        // 格式: [物品名称X数量]
-        // 使用 §r 重置颜色，确保括号和 X 符号使用默认颜色
-        // 使用 § 格式而不是 & 格式，避免被 ChatColor.translateAlternateColorCodes() 处理
+        // 格式: &b[物品名称 &eX 数量&b]
+        // 使用 & 格式的颜色代码，最后会被 ChatColor.translateAlternateColorCodes() 转换
         if (amount > 1) {
-            return "§r[" + displayName + " §rX " + amount + "§r]";
+            return "&b[" + displayName + " &eX " + amount + "&b]";
         } else {
-            return "§r[" + displayName + "§r]";
+            return "&b[" + displayName + "&b]";
         }
     }
     
@@ -851,108 +850,108 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 这里只列出了部分常用物品，你可以根据需要扩展
         switch (material) {
             // 工具类
-            case DIAMOND_SWORD: return "§f钻石剑";
-            case IRON_SWORD: return "§f铁剑";
-            case GOLDEN_SWORD: return "§f金剑";
-            case STONE_SWORD: return "§f石剑";
-            case WOODEN_SWORD: return "§f木剑";
+            case DIAMOND_SWORD: return "&f钻石剑";
+            case IRON_SWORD: return "&f铁剑";
+            case GOLDEN_SWORD: return "&f金剑";
+            case STONE_SWORD: return "&f石剑";
+            case WOODEN_SWORD: return "&f木剑";
             
-            case DIAMOND_PICKAXE: return "§f钻石镐";
-            case IRON_PICKAXE: return "§f铁镐";
-            case GOLDEN_PICKAXE: return "§f金镐";
-            case STONE_PICKAXE: return "§f石镐";
-            case WOODEN_PICKAXE: return "§f木镐";
+            case DIAMOND_PICKAXE: return "&f钻石镐";
+            case IRON_PICKAXE: return "&f铁镐";
+            case GOLDEN_PICKAXE: return "&f金镐";
+            case STONE_PICKAXE: return "&f石镐";
+            case WOODEN_PICKAXE: return "&f木镐";
             
-            case DIAMOND_AXE: return "§f钻石斧";
-            case IRON_AXE: return "§f铁斧";
-            case GOLDEN_AXE: return "§f金斧";
-            case STONE_AXE: return "§f石斧";
-            case WOODEN_AXE: return "§f木斧";
+            case DIAMOND_AXE: return "&f钻石斧";
+            case IRON_AXE: return "&f铁斧";
+            case GOLDEN_AXE: return "&f金斧";
+            case STONE_AXE: return "&f石斧";
+            case WOODEN_AXE: return "&f木斧";
             
-            case DIAMOND_SHOVEL: return "§f钻石锹";
-            case IRON_SHOVEL: return "§f铁锹";
-            case GOLDEN_SHOVEL: return "§f金锹";
-            case STONE_SHOVEL: return "§f石锹";
-            case WOODEN_SHOVEL: return "§f木锹";
+            case DIAMOND_SHOVEL: return "&f钻石锹";
+            case IRON_SHOVEL: return "&f铁锹";
+            case GOLDEN_SHOVEL: return "&f金锹";
+            case STONE_SHOVEL: return "&f石锹";
+            case WOODEN_SHOVEL: return "&f木锹";
             
-            case DIAMOND_HOE: return "§f钻石锄";
-            case IRON_HOE: return "§f铁锄";
-            case GOLDEN_HOE: return "§f金锄";
-            case STONE_HOE: return "§f石锄";
-            case WOODEN_HOE: return "§f木锄";
+            case DIAMOND_HOE: return "&f钻石锄";
+            case IRON_HOE: return "&f铁锄";
+            case GOLDEN_HOE: return "&f金锄";
+            case STONE_HOE: return "&f石锄";
+            case WOODEN_HOE: return "&f木锄";
             
             // 盔甲类
-            case DIAMOND_HELMET: return "§f钻石头盔";
-            case IRON_HELMET: return "§f铁头盔";
-            case GOLDEN_HELMET: return "§f金头盔";
-            case CHAINMAIL_HELMET: return "§f锁链头盔";
-            case LEATHER_HELMET: return "§f皮革头盔";
+            case DIAMOND_HELMET: return "&f钻石头盔";
+            case IRON_HELMET: return "&f铁头盔";
+            case GOLDEN_HELMET: return "&f金头盔";
+            case CHAINMAIL_HELMET: return "&f锁链头盔";
+            case LEATHER_HELMET: return "&f皮革头盔";
             
-            case DIAMOND_CHESTPLATE: return "§f钻石胸甲";
-            case IRON_CHESTPLATE: return "§f铁胸甲";
-            case GOLDEN_CHESTPLATE: return "§f金胸甲";
-            case CHAINMAIL_CHESTPLATE: return "§f锁链胸甲";
-            case LEATHER_CHESTPLATE: return "§f皮革胸甲";
+            case DIAMOND_CHESTPLATE: return "&f钻石胸甲";
+            case IRON_CHESTPLATE: return "&f铁胸甲";
+            case GOLDEN_CHESTPLATE: return "&f金胸甲";
+            case CHAINMAIL_CHESTPLATE: return "&f锁链胸甲";
+            case LEATHER_CHESTPLATE: return "&f皮革胸甲";
             
-            case DIAMOND_LEGGINGS: return "§f钻石护腿";
-            case IRON_LEGGINGS: return "§f铁护腿";
-            case GOLDEN_LEGGINGS: return "§f金护腿";
-            case CHAINMAIL_LEGGINGS: return "§f锁链护腿";
-            case LEATHER_LEGGINGS: return "§f皮革护腿";
+            case DIAMOND_LEGGINGS: return "&f钻石护腿";
+            case IRON_LEGGINGS: return "&f铁护腿";
+            case GOLDEN_LEGGINGS: return "&f金护腿";
+            case CHAINMAIL_LEGGINGS: return "&f锁链护腿";
+            case LEATHER_LEGGINGS: return "&f皮革护腿";
             
-            case DIAMOND_BOOTS: return "§f钻石靴子";
-            case IRON_BOOTS: return "§f铁靴子";
-            case GOLDEN_BOOTS: return "§f金靴子";
-            case CHAINMAIL_BOOTS: return "§f锁链靴子";
-            case LEATHER_BOOTS: return "§f皮革靴子";
+            case DIAMOND_BOOTS: return "&f钻石靴子";
+            case IRON_BOOTS: return "&f铁靴子";
+            case GOLDEN_BOOTS: return "&f金靴子";
+            case CHAINMAIL_BOOTS: return "&f锁链靴子";
+            case LEATHER_BOOTS: return "&f皮革靴子";
             
             // 材料类
-            case DIAMOND: return "§f钻石";
-            case IRON_INGOT: return "§f铁锭";
-            case GOLD_INGOT: return "§f金锭";
-            case EMERALD: return "§f绿宝石";
-            case REDSTONE: return "§f红石";
-            case LAPIS_LAZULI: return "§f青金石";
-            case COAL: return "§f煤炭";
+            case DIAMOND: return "&f钻石";
+            case IRON_INGOT: return "&f铁锭";
+            case GOLD_INGOT: return "&f金锭";
+            case EMERALD: return "&f绿宝石";
+            case REDSTONE: return "&f红石";
+            case LAPIS_LAZULI: return "&f青金石";
+            case COAL: return "&f煤炭";
             
             // 药水类
-            case POTION: return "§f药水";
-            case SPLASH_POTION: return "§f喷溅型药水";
-            case LINGERING_POTION: return "§f滞留型药水";
-            case EXPERIENCE_BOTTLE: return "§f附魔之瓶";
+            case POTION: return "&f药水";
+            case SPLASH_POTION: return "&f喷溅型药水";
+            case LINGERING_POTION: return "&f滞留型药水";
+            case EXPERIENCE_BOTTLE: return "&f附魔之瓶";
             
             // 食物类
-            case APPLE: return "§f苹果";
-            case GOLDEN_APPLE: return "§f金苹果";
-            case ENCHANTED_GOLDEN_APPLE: return "§f附魔金苹果";
-            case BREAD: return "§f面包";
-            case COOKED_BEEF: return "§f熟牛肉";
-            case COOKED_PORKCHOP: return "§f熟猪排";
-            case COOKED_CHICKEN: return "§f熟鸡肉";
+            case APPLE: return "&f苹果";
+            case GOLDEN_APPLE: return "&f金苹果";
+            case ENCHANTED_GOLDEN_APPLE: return "&f附魔金苹果";
+            case BREAD: return "&f面包";
+            case COOKED_BEEF: return "&f熟牛肉";
+            case COOKED_PORKCHOP: return "&f熟猪排";
+            case COOKED_CHICKEN: return "&f熟鸡肉";
             
             // 方块类
-            case DIAMOND_BLOCK: return "§f钻石块";
-            case IRON_BLOCK: return "§f铁块";
-            case GOLD_BLOCK: return "§f金块";
-            case EMERALD_BLOCK: return "§f绿宝石块";
-            case STONE: return "§f石头";
-            case OAK_PLANKS: return "§f橡木木板";
-            case GLASS: return "§f玻璃";
+            case DIAMOND_BLOCK: return "&f钻石块";
+            case IRON_BLOCK: return "&f铁块";
+            case GOLD_BLOCK: return "&f金块";
+            case EMERALD_BLOCK: return "&f绿宝石块";
+            case STONE: return "&f石头";
+            case OAK_PLANKS: return "&f橡木木板";
+            case GLASS: return "&f玻璃";
             
             // 其他
-            case BOW: return "§f弓";
-            case CROSSBOW: return "§f弩";
-            case TRIDENT: return "§f三叉戟";
-            case SHIELD: return "§f盾牌";
-            case FISHING_ROD: return "§f钓鱼竿";
-            case FLINT_AND_STEEL: return "§f打火石";
-            case SHEARS: return "§f剪刀";
-            case CLOCK: return "§f钟表";
-            case COMPASS: return "§f指南针";
-            case MAP: return "§f地图";
-            case BOOK: return "§f书";
-            case WRITTEN_BOOK: return "§f成书";
-            case WRITABLE_BOOK: return "§f书与笔";
+            case BOW: return "&f弓";
+            case CROSSBOW: return "&f弩";
+            case TRIDENT: return "&f三叉戟";
+            case SHIELD: return "&f盾牌";
+            case FISHING_ROD: return "&f钓鱼竿";
+            case FLINT_AND_STEEL: return "&f打火石";
+            case SHEARS: return "&f剪刀";
+            case CLOCK: return "&f钟表";
+            case COMPASS: return "&f指南针";
+            case MAP: return "&f地图";
+            case BOOK: return "&f书";
+            case WRITTEN_BOOK: return "&f成书";
+            case WRITABLE_BOOK: return "&f书与笔";
             
             default:
                 // 如果没有中文映射，使用英文名称（首字母大写）
@@ -968,7 +967,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                                    .append(part.substring(1).toLowerCase());
                     }
                 }
-                return "§f" + friendlyName.toString();
+                return "&f" + friendlyName.toString();
         }
     }
 
