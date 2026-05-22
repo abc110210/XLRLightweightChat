@@ -444,19 +444,7 @@ public class ShanItem {
             
             default:
                 // 如果没有中文映射，使用英文名称（首字母大写）
-                String typeName = material.name();
-                String[] parts = typeName.split("_");
-                StringBuilder friendlyName = new StringBuilder();
-                for (String part : parts) {
-                    if (!friendlyName.isEmpty()) {
-                        friendlyName.append(" ");
-                    }
-                    if (!part.isEmpty()) {
-                        friendlyName.append(part.substring(0, 1).toUpperCase())
-                                   .append(part.substring(1).toLowerCase());
-                    }
-                }
-                return "&f" + friendlyName;
+                return "&f" + getItemEnglishName(material);
         }
     }
     
@@ -482,10 +470,10 @@ public class ShanItem {
         // 在开头添加 §r 重置符，清除前面的样式影响
         TextComponent itemComponent = new TextComponent("§r" + coloredDisplayName + "§r");
         
-        // 设置悬浮事件 - 使用 SHOW_TEXT 显示完整的物品信息
+        // 设置悬浮事件 - 使用 Content 接口创建 HoverEvent（Spigot 1.16+ 推荐方式）
         itemComponent.setHoverEvent(new HoverEvent(
             HoverEvent.Action.SHOW_TEXT,
-            hoverComponents
+            new HoverEvent.Content(hoverComponents)
         ));
         
         return new BaseComponent[]{itemComponent};
@@ -496,8 +484,6 @@ public class ShanItem {
      * 按照游戏标准格式显示物品信息
      */
     public BaseComponent[] createItemTooltipComponents(ItemStack item) {
-        List<BaseComponent> tooltip = new ArrayList<>();
-        
         // 添加物品名称（标题）
         String displayName;
         ItemMeta meta = item.getItemMeta();
@@ -509,19 +495,7 @@ public class ShanItem {
             if ("zh-cn".equalsIgnoreCase(language)) {
                 displayName = getItemChineseName(item.getType());
             } else {
-                String typeName = item.getType().name();
-                String[] parts = typeName.split("_");
-                StringBuilder friendlyName = new StringBuilder();
-                for (String part : parts) {
-                    if (!friendlyName.isEmpty()) {
-                        friendlyName.append(" ");
-                    }
-                    if (!part.isEmpty()) {
-                        friendlyName.append(part.substring(0, 1).toUpperCase())
-                                   .append(part.substring(1).toLowerCase());
-                    }
-                }
-                displayName = "&f" + friendlyName;
+                displayName = "&f" + getItemEnglishName(item.getType());
             }
         }
         
@@ -591,6 +565,25 @@ public class ShanItem {
         }
         
         return builder.create();
+    }
+    
+    /**
+     * 获取物品的英文名称（首字母大写，用空格分隔）
+     */
+    private String getItemEnglishName(Material material) {
+        String typeName = material.name();
+        String[] parts = typeName.split("_");
+        StringBuilder friendlyName = new StringBuilder();
+        for (String part : parts) {
+            if (!friendlyName.isEmpty()) {
+                friendlyName.append(" ");
+            }
+            if (!part.isEmpty()) {
+                friendlyName.append(part.substring(0, 1).toUpperCase())
+                           .append(part.substring(1).toLowerCase());
+            }
+        }
+        return friendlyName.toString();
     }
     
     /**

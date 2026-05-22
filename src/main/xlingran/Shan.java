@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
@@ -804,24 +802,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         }
     }
 
-    private String processFormat(String format, String message) {
-        // 查找格式中所有的颜色变量
-        String colorVariable = extractColorVariable(format);
-
-        if (colorVariable != null && variableColors.containsKey(colorVariable)) {
-            // 应用颜色到消息
-            String coloredMessage = applyGradientColor(message, variableColors.get(colorVariable));
-            // 移除颜色变量占位符
-            format = format.replace(colorVariable, "");
-            // 替换消息内容（%chat% 已改为 %chat%）
-            format = format.replace("%chat%", coloredMessage);
-        } else {
-            format = format.replace("%chat%", message);
-        }
-
-        return format;
-    }
-
     private String extractColorVariable(String format) {
         // 查找%chat%之前的颜色变量（%message% 已改为 %chat%）
         int chatIndex = format.indexOf("%chat%");
@@ -857,6 +837,23 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         return null;
     }
     
+    /**
+     * 将 RGB 颜色转换为 Minecraft 16 进制颜色代码格式
+     * @param r 红色值 (0-255)
+     * @param g 绿色值 (0-255)
+     * @param b 蓝色值 (0-255)
+     * @return 16 进制颜色代码字符串（§x§R§R§G§G§B§B 格式）
+     */
+    private String toHexString(int r, int g, int b) {
+        return String.format("§x§%c§%c§%c§%c§%c§%c",
+            toUpperHexDigit(r >> 4),
+            toUpperHexDigit(r),
+            toUpperHexDigit(g >> 4),
+            toUpperHexDigit(g),
+            toUpperHexDigit(b >> 4),
+            toUpperHexDigit(b));
+    }
+    
     private String applyGradientColor(String text, String colorConfig) {
         // 解析颜色配置，支持格式：#起始色-#结束色
         if (colorConfig.contains("-")) {
@@ -870,31 +867,15 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 如果是单一颜色
         else if (colorConfig.startsWith("#")) {
             String hexColor = colorConfig.replace("#", "");
-            // 手动生成 §x§R§R§G§G§B§B 格式
             int r = Integer.parseInt(hexColor.substring(0, 2), 16);
             int g = Integer.parseInt(hexColor.substring(2, 4), 16);
             int b = Integer.parseInt(hexColor.substring(4, 6), 16);
-            String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
-                toUpperHexDigit(r >> 4),
-                toUpperHexDigit(r),
-                toUpperHexDigit(g >> 4),
-                toUpperHexDigit(g),
-                toUpperHexDigit(b >> 4),
-                toUpperHexDigit(b));
-            return hexCode + text;
+            return toHexString(r, g, b) + text;
         }
 
         return text;
     }
     
-    /**
-     * 应用渐变颜色到指定范围的文本，支持连续的渐变进度
-     * @param text 要处理的文本
-     * @param colorConfig 颜色配置
-     * @param rangeStart 当前文本在整个消息中的起始位置
-     * @param textLength 当前文本的长度
-     * @param totalLength 整个消息的总长度（不包括物品）
-     */
     /**
      * 计算字符串中的可见字符数（跳过所有颜色代码）
      * @param text 输入文本
@@ -950,18 +931,10 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             // 单一颜色，直接应用
             if (colorConfig.startsWith("#")) {
                 String hexColor = colorConfig.replace("#", "");
-                // 手动生成 §x§R§R§G§G§B§B 格式
                 int r = Integer.parseInt(hexColor.substring(0, 2), 16);
                 int g = Integer.parseInt(hexColor.substring(2, 4), 16);
                 int b = Integer.parseInt(hexColor.substring(4, 6), 16);
-                String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
-                    toUpperHexDigit(r >> 4),
-                    toUpperHexDigit(r),
-                    toUpperHexDigit(g >> 4),
-                    toUpperHexDigit(g),
-                    toUpperHexDigit(b >> 4),
-                    toUpperHexDigit(b));
-                return hexCode + text;
+                return toHexString(r, g, b) + text;
             }
             return text;
         }
@@ -1038,16 +1011,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             int g = (int) (startColor.getGreen() + (endColor.getGreen() - startColor.getGreen()) * ratio);
             int b = (int) (startColor.getBlue() + (endColor.getBlue() - startColor.getBlue()) * ratio);
 
-            // 手动生成 §x§R§R§G§G§B§B 格式的 16 进制颜色代码
-            String hexColor = String.format("§x§%c§%c§%c§%c§%c§%c",
-                toUpperHexDigit(r >> 4),
-                toUpperHexDigit(r),
-                toUpperHexDigit(g >> 4),
-                toUpperHexDigit(g),
-                toUpperHexDigit(b >> 4),
-                toUpperHexDigit(b));
-            
-            result.append(hexColor).append(c);
+            result.append(toHexString(r, g, b)).append(c);
             charIndex++;
         }
         
@@ -1066,14 +1030,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (length == 1) {
             // 如果只有一个字符，直接应用起始颜色
             java.awt.Color startColor = parseHexColor(startHex);
-            String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
-                toUpperHexDigit(startColor.getRed() >> 4),
-                toUpperHexDigit(startColor.getRed()),
-                toUpperHexDigit(startColor.getGreen() >> 4),
-                toUpperHexDigit(startColor.getGreen()),
-                toUpperHexDigit(startColor.getBlue() >> 4),
-                toUpperHexDigit(startColor.getBlue()));
-            return hexCode + text;
+            return toHexString(startColor.getRed(), startColor.getGreen(), startColor.getBlue()) + text;
         }
 
         // 解析起始和结束颜色
@@ -1258,18 +1215,10 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 // 如果是单一颜色
                 else if (colorConfig.startsWith("#")) {
                     String hexColor = colorConfig.replace("#", "");
-                    // 手动生成 §x§R§R§G§G§B§B 格式
                     int r = Integer.parseInt(hexColor.substring(0, 2), 16);
                     int g = Integer.parseInt(hexColor.substring(2, 4), 16);
                     int b = Integer.parseInt(hexColor.substring(4, 6), 16);
-                    String hexCode = String.format("§x§%c§%c§%c§%c§%c§%c",
-                        toUpperHexDigit(r >> 4),
-                        toUpperHexDigit(r),
-                        toUpperHexDigit(g >> 4),
-                        toUpperHexDigit(g),
-                        toUpperHexDigit(b >> 4),
-                        toUpperHexDigit(b));
-                    text = text.replace(variable, hexCode);
+                    text = text.replace(variable, toHexString(r, g, b));
                 }
             }
         }
