@@ -123,16 +123,23 @@ public class Shan extends JavaPlugin implements Listener {
         // 替换 %player%
         String result = format.replace("%player%", player.getName());
         
-        // 替换 %chat%
-        result = result.replace("%chat%", message);
-        
-        // 替换颜色变量 %color1%, %color2% 等
+        // 先替换颜色变量 %color1%, %color2% 等（在 %chat% 之前）
         for (Map.Entry<String, String> entry : colorVariables.entrySet()) {
             if (result.contains(entry.getKey())) {
-                String gradientResult = applyGradient(entry.getValue(), message);
-                result = result.replace(entry.getKey() + "%chat%", gradientResult);
+                String gradientConfig = entry.getValue();
+                String placeholder = entry.getKey();
+                
+                // 查找 %colorX%%chat% 并替换为渐变后的消息
+                String pattern = placeholder + "%chat%";
+                if (result.contains(pattern)) {
+                    String gradientResult = applyGradient(gradientConfig, message);
+                    result = result.replace(pattern, gradientResult);
+                }
             }
         }
+        
+        // 最后替换 %chat%（处理没有颜色变量的情况）
+        result = result.replace("%chat%", message);
         
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
