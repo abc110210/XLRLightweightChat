@@ -159,6 +159,11 @@ public class GuiManager implements Listener {
             // 检查玩家当前穿戴的称号
             String currentTitle = plugin.getPlayerCurrentTitle(player);
             boolean isWearing = currentTitle != null && currentTitle.equals(titleInfo.prefix());
+            
+            // 调试输出（仅在控制台）
+            if (currentTitle != null) {
+                Bukkit.getLogger().info("[GUI调试] 称号: " + titleInfo.prefix() + ", 当前: " + currentTitle + ", 是否穿戴: " + isWearing);
+            }
 
             // 设置 Lore
             List<String> lore = new ArrayList<>();
@@ -269,6 +274,12 @@ public class GuiManager implements Listener {
      * 处理称号点击
      */
     private void handleTitleClick(Player player, Inventory gui, int slot) {
+        // 获取点击槽位的物品
+        ItemStack clickedItem = gui.getItem(slot);
+        if (clickedItem == null || clickedItem.getType() != Material.NAME_TAG) {
+            return; // 点击的不是命名牌
+        }
+        
         // 从 GUI 槽位计算称号索引
         int row = (slot - 10) / 9;
         int col = (slot - 10) % 9;
@@ -286,16 +297,38 @@ public class GuiManager implements Listener {
 
         // 切换称号
         String currentTitle = plugin.getPlayerCurrentTitle(player);
+        
+        // 调试：输出当前存储的称号
+        player.sendMessage("§7[调试] 当前存储的称号: " + (currentTitle == null ? "无" : currentTitle));
+        player.sendMessage("§7[调试] 点击的称号: " + clickedTitle.prefix());
+        player.sendMessage("§7[调试] 玩家UUID: " + player.getUniqueId());
+        
         if (currentTitle != null && currentTitle.equals(clickedTitle.prefix())) {
             // 取消穿戴
             plugin.setPlayerCurrentTitle(player, null);
             player.sendMessage(ChatColor.GREEN + "已取消穿戴称号");
+            player.sendMessage("§7[调试] 已移除称号");
         } else {
             // 穿戴称号
+            player.sendMessage("§7[调试] 准备存储称号...");
             plugin.setPlayerCurrentTitle(player, clickedTitle.prefix());
-            player.sendMessage(ChatColor.GREEN + "已穿戴称号: " + ChatColor.translateAlternateColorCodes('&', clickedTitle.prefix()));
+            player.sendMessage("§7[调试] 称号已存储");
+            
+            // 调试：验证是否存储成功
+            String verifyTitle = plugin.getPlayerCurrentTitle(player);
+            player.sendMessage("§7[调试] 验证存储的称号: " + (verifyTitle == null ? "无" : verifyTitle));
+            
+            // 处理颜色后显示
+            String processedTitle = plugin.processTitleColors(clickedTitle.prefix());
+            processedTitle = ChatColor.translateAlternateColorCodes('&', processedTitle);
+            player.sendMessage(ChatColor.GREEN + "已穿戴称号: " + processedTitle);
         }
 
+        // 调试：刷新 GUI 前再次检查
+        String finalCheck = plugin.getPlayerCurrentTitle(player);
+        player.sendMessage("§7[调试] 最终检查 - 存储的称号: " + (finalCheck == null ? "无" : finalCheck));
+        player.sendMessage("§7[调试] 准备刷新 GUI，当前页: " + currentPage);
+        
         // 刷新 GUI
         player.openInventory(createGUI(player, currentPage));
     }
