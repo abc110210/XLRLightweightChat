@@ -1110,10 +1110,11 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         String currentTitleId = playerCurrentTitle.get(playerId);
         if (currentTitleId != null && playerTitles.containsKey(currentTitleId)) {
             String title = playerTitles.get(currentTitleId);
-            // 处理称号中的颜色变量（如 %color2%）
+            // 先处理颜色变量（如 %color2%）
             title = processColorVariables(title);
-            // 只转换传统颜色代码，不影响已经处理好的 16 进制颜色
-            return ChatColor.translateAlternateColorCodes('&', title);
+            // 再转换传统颜色代码（& -> §）- 不会影响已经处理好的 16 进制颜色
+            title = ChatColor.translateAlternateColorCodes('&', title);
+            return title;
         }
         
         // 如果没有穿戴称号，从最高 ID (56) 开始检查，找到玩家拥有的最高权限称号
@@ -1133,20 +1134,22 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String permission = "xlr.chat.playertitle." + id;
             if (player.hasPermission(permission)) {
                 String title = playerTitles.get(id);
-                // 处理称号中的颜色变量（如 %color2%）
+                // 先处理颜色变量（如 %color2%）
                 title = processColorVariables(title);
-                // 只转换传统颜色代码，不影响已经处理好的 16 进制颜色
-                return ChatColor.translateAlternateColorCodes('&', title);
+                // 再转换传统颜色代码（& -> §）- 不会影响已经处理好的 16 进制颜色
+                title = ChatColor.translateAlternateColorCodes('&', title);
+                return title;
             }
         }
 
         // 默认称号（ID 1）
         String defaultTitle = playerTitles.get("1");
         if (defaultTitle != null) {
-            // 处理称号中的颜色变量
+            // 先处理颜色变量
             defaultTitle = processColorVariables(defaultTitle);
-            // 只转换传统颜色代码，不影响已经处理好的 16 进制颜色
-            return ChatColor.translateAlternateColorCodes('&', defaultTitle);
+            // 再转换传统颜色代码
+            defaultTitle = ChatColor.translateAlternateColorCodes('&', defaultTitle);
+            return defaultTitle;
         }
         
         return "";
