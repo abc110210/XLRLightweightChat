@@ -486,7 +486,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         for (int i = 0; i < titleSlots.length; i++) {
             if (titleSlots[i] == event.getSlot()) {
                 // 找到了对应的槽位
-                if (invTitle.equals(ChatColor.GREEN + "称号仓库 第1页")) {
+                if (invTitle.equals(page1Title)) {
                     // 第1页：直接索引
                     if (i < ownedTitles.size()) {
                         selectedTitleId = ownedTitles.get(i);
