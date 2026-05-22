@@ -691,15 +691,9 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String playerTitle = getPlayerTitle(player);
             // 在称号后面添加重置符，防止后面的颜色代码影响称号
             format = format.replace("%ChatPrefix%", playerTitle + "§r");
-            
-            // DEBUG: 打印称号处理后的格式
-            System.out.println("[DEBUG] 替换称号后的format: " + format);
 
             // 再替换玩家名称
             format = format.replace("%player%", player.getDisplayName());
-            
-            // DEBUG: 打印替换玩家名后的格式
-            System.out.println("[DEBUG] 替换玩家名后的format: " + format);
 
             // 处理消息内容
             String result;
@@ -716,34 +710,27 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 String afterColored = applyGradientWithRange(afterItem, colorConfig, beforeItem.length(), afterItem.length(), totalVisibleChars);
                 
                 // 使用 BaseComponent 拼接消息
-                // 创建组件数组
                 List<BaseComponent> componentList = new ArrayList<>();
                 
-                // 添加前文本组件
                 if (!beforeColored.isEmpty()) {
                     componentList.add(new TextComponent(beforeColored));
                 }
                 
-                // 添加物品组件
                 componentList.add(itemComponents[0]);
                 
-                // 添加后文本组件
                 if (!afterColored.isEmpty()) {
                     componentList.add(new TextComponent(afterColored));
                 }
                 
                 BaseComponent[] messageComponents = componentList.toArray(new BaseComponent[0]);
                 
-                // 将格式应用到消息
                 TextComponent fullMessage = new TextComponent(format.replace("%chat%", ""));
                 for (BaseComponent comp : messageComponents) {
                     fullMessage.addExtra(comp);
                 }
                 
-                // 取消默认聊天事件
                 event.setCancelled(true);
                 
-                // 广播消息
                 for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                     onlinePlayer.spigot().sendMessage(fullMessage);
                 }
@@ -752,22 +739,13 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 // 有渐变颜色但没有物品：正常处理
                 String coloredMessage = applyGradientColor(message, colorConfig);
                 
-                // DEBUG: 打印替换前的format
-                System.out.println("[DEBUG] 替换前的format: " + format);
-                System.out.println("[DEBUG] format中是否包含%chat%: " + format.contains("%chat%"));
-                
-                result = format.replace("%chat%", coloredMessage);
-                
-                // DEBUG: 打印替换后的result
-                System.out.println("[DEBUG] 替换后的result: " + result);
-                System.out.println("[DEBUG] result中是否包含%chat%: " + result.contains("%chat%"));
-                
-                // DEBUG: 打印聊天内容处理后的result
-                System.out.println("[DEBUG] 有渐变颜色-处理后的result: " + result);
-                System.out.println("[DEBUG] 原始消息: " + message);
-                System.out.println("[DEBUG] 渐变后的消息: " + coloredMessage);
-                System.out.println("[DEBUG] colorConfig: " + colorConfig);
-                System.out.println("[DEBUG] format: " + format);
+                // 使用 indexOf 和 substring 来替换 %chat%，避免 replace 方法的潜在问题
+                int chatIndex = format.indexOf("%chat%");
+                if (chatIndex != -1) {
+                    result = format.substring(0, chatIndex) + coloredMessage + format.substring(chatIndex + 6);
+                } else {
+                    result = format; // 如果没有找到 %chat%，直接使用 format
+                }
             } else {
                 // 没有渐变颜色，直接替换
                 if (itemComponents != null) {
@@ -804,26 +782,21 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                     }
                     return;
                 } else {
-                    result = format.replace("%chat%", message);
+                    // 使用 indexOf 和 substring 来替换 %chat%
+                    int chatIndex = format.indexOf("%chat%");
+                    if (chatIndex != -1) {
+                        result = format.substring(0, chatIndex) + message + format.substring(chatIndex + 6);
+                    } else {
+                        result = format;
+                    }
                 }
             }
 
             // 取消默认聊天事件
             event.setCancelled(true);
             
-            // DEBUG: 打印最终消息处理前的result
-            System.out.println("[DEBUG] 最终result: " + result);
-            
             // 直接广播格式化后的消息
-            // Spigot 1.16+ 原生支持 16 进制颜色，ChatColor.of() 返回的对象可以直接使用
-            // 只需要转换 & 颜色代码即可
-            // 注意：必须先转换传统颜色代码，因为 16 进制颜色已经是 §x§... 格式
             String finalMessage = ChatColor.translateAlternateColorCodes('&', result);
-            
-            // DEBUG: 打印转换后的finalMessage
-            System.out.println("[DEBUG] translateAlternateColorCodes后的finalMessage: " + finalMessage);
-            System.out.println("[DEBUG] finalMessage长度: " + finalMessage.length());
-            System.out.println("[DEBUG] finalMessage字节: " + java.util.Arrays.toString(finalMessage.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
             
             // 使用 BaseComponent 广播消息
             TextComponent messageComponent = new TextComponent(finalMessage);
@@ -854,7 +827,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         int chatIndex = format.indexOf("%chat%");
 
         if (chatIndex == -1) {
-            System.out.println("[DEBUG] extractColorVariable: 没有找到 %chat%");
             return null;
         }
 
@@ -864,31 +836,24 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 从后往前查找，找到最后一个完整的%...%变量
         int lastEndPercent = beforeChat.lastIndexOf("%");
         if (lastEndPercent == -1) {
-            System.out.println("[DEBUG] extractColorVariable: 没有找到 % 符号");
             return null;
         }
 
         // 从lastEndPercent往前找配对的开始%
         int lastStartPercent = beforeChat.lastIndexOf("%", lastEndPercent - 1);
         if (lastStartPercent == -1) {
-            System.out.println("[DEBUG] extractColorVariable: 没有找到配对的 % 符号");
             return null;
         }
 
         String variable = beforeChat.substring(lastStartPercent, lastEndPercent + 1);
-        
-        System.out.println("[DEBUG] extractColorVariable: 找到的变量 = " + variable);
-        System.out.println("[DEBUG] extractColorVariable: beforeChat = " + beforeChat);
 
         // 检查是否是颜色变量（在Variable中定义且不是%player%或%chat%）
         if (variableColors.containsKey(variable) &&
             !variable.equals("%player%") &&
             !variable.equals("%chat%")) {
-            System.out.println("[DEBUG] extractColorVariable: 变量 " + variable + " 在 variableColors 中");
             return variable;
         }
 
-        System.out.println("[DEBUG] extractColorVariable: 变量 " + variable + " 不在 variableColors 中");
         return null;
     }
     
@@ -1216,12 +1181,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             title = processColorVariables(title);
             // 再转换传统颜色代码（& -> §）
             title = ChatColor.translateAlternateColorCodes('&', title);
-            // 添加调试信息
-            System.out.println("[DEBUG] 称号处理 - ID: " + currentTitleId);
-            System.out.println("[DEBUG] 原始称号: " + playerTitles.get(currentTitleId));
-            System.out.println("[DEBUG] 处理后称号: " + title);
-            System.out.println("[DEBUG] 称号长度: " + title.length());
-            System.out.println("[DEBUG] 称号字节: " + java.util.Arrays.toString(title.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
             return title;
         }
         
