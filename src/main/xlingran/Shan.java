@@ -519,7 +519,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
         StringBuilder result = new StringBuilder();
         int length = text.length();
-        
+
         // 设置最小渐变长度，确保短文本也能看到明显的渐变效果
         int minGradientLength = Math.max(length, 8); // 至少8个字符完成一次渐变
 
@@ -530,7 +530,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         // 为每个字符应用渐变色
         for (int i = 0; i < length; i++) {
             // 使用 minGradientLength 计算渐变比例，而不是实际文本长度
-            // 这样即使文本很短，也能看到明显的颜色变化
             float ratio = (float) i / (minGradientLength - 1);
             // 确保 ratio 不超过 1.0
             if (ratio > 1.0f) ratio = 1.0f;
@@ -542,7 +541,6 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String hexColor = String.format("#%02x%02x%02x", r, g, b);
             ChatColor chatColor = ChatColor.of(hexColor);
 
-            // 直接使用 ChatColor 对象，不要使用 toString()
             result.append(chatColor).append(text.charAt(i));
         }
 
@@ -577,6 +575,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 String title = playerTitles.get(id);
                 // 处理称号中的颜色变量（如 %color2%）
                 title = processColorVariables(title);
+                // 只转换传统颜色代码，不影响已经处理好的 16 进制颜色
                 return ChatColor.translateAlternateColorCodes('&', title);
             }
         }
@@ -586,6 +585,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         if (defaultTitle != null) {
             // 处理称号中的颜色变量
             defaultTitle = processColorVariables(defaultTitle);
+            // 只转换传统颜色代码，不影响已经处理好的 16 进制颜色
             return ChatColor.translateAlternateColorCodes('&', defaultTitle);
         }
         
@@ -610,12 +610,19 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 // 如果是渐变色
                 if (colorConfig.contains("-")) {
                     String[] colors = colorConfig.split("-");
-                    if (colors.length == 2) {
+                    if (colors.length >= 2) {
                         String startColor = colors[0].replace("#", "");
                         String endColor = colors[1].replace("#", "");
-                        // 暂时用起始颜色替换，转换为 §x 格式
-                        String hexColor = "#" + startColor;
-                        text = text.replace(variable, net.md_5.bungee.api.ChatColor.of(hexColor).toString());
+                        
+                        // 找到变量的位置
+                        int varIndex = text.indexOf(variable);
+                        String beforeVar = text.substring(0, varIndex); // 变量前的内容
+                        String afterVar = text.substring(varIndex + variable.length()); // 变量后的内容（需要渐变的部分）
+                        
+                        // 对变量后的文本应用渐变效果
+                        String gradientText = applyGradient(afterVar, startColor, endColor);
+                        // 重新组合：前面的内容 + 渐变后的文本
+                        text = beforeVar + gradientText;
                     }
                 }
                 // 如果是单一颜色
