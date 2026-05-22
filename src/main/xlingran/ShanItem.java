@@ -478,10 +478,10 @@ public class ShanItem {
         // 创建文本组件
         TextComponent itemComponent = new TextComponent(displayName);
         
-        // 设置悬浮事件 - 使用 Spigot 的 HoverEvent API
+        // 设置悬浮事件 - 使用 SHOW_TEXT 显示完整的物品信息
         itemComponent.setHoverEvent(new HoverEvent(
-            HoverEvent.Action.SHOW_ITEM,
-            new ComponentBuilder("[物品]").create()
+            HoverEvent.Action.SHOW_TEXT,
+            hoverComponents
         ));
         
         return new BaseComponent[]{itemComponent};
