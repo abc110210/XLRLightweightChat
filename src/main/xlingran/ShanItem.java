@@ -525,24 +525,25 @@ public class ShanItem {
             }
         }
         
-        // 标题行：物品名称
-        TextComponent nameComponent = new TextComponent(displayName + "\n");
-        nameComponent.setItalic(true); // 斜体
-        tooltip.add(nameComponent);
+        // 使用 ComponentBuilder 构建完整的悬浮提示，确保每行样式正确
+        ComponentBuilder builder = new ComponentBuilder();
+        
+        // 标题行：物品名称（斜体）
+        builder.append(displayName).italic(true);
+        builder.append("\n");
         
         // 添加空行
-        tooltip.add(new TextComponent("\n"));
+        builder.append("\n");
         
         // 添加 Lore（描述）- 按照第二张图的格式
         if (meta != null && meta.hasLore()) {
             List<String> lore = meta.getLore();
             if (lore != null && !lore.isEmpty()) {
-                // 显示 "描述: " + Lore 内容
+                // 重置样式，然后显示 Lore 内容
                 for (String loreLine : lore) {
                     String coloredLore = ChatColor.translateAlternateColorCodes('&', loreLine);
-                    TextComponent loreComponent = new TextComponent(coloredLore + "\n");
-                    loreComponent.setItalic(false); // 不斜体，直接显示
-                    tooltip.add(loreComponent);
+                    builder.reset().append(coloredLore).italic(false);
+                    builder.append("\n");
                 }
             }
         }
@@ -551,18 +552,19 @@ public class ShanItem {
         if (meta != null && meta.hasEnchants()) {
             // 在 Lore 和附魔之间添加空行
             if (meta.hasLore()) {
-                tooltip.add(new TextComponent("\n"));
+                builder.append("\n");
             }
             
             for (Map.Entry<Enchantment, Integer> enchant : meta.getEnchants().entrySet()) {
                 String enchantName = getEnchantmentChineseName(enchant.getKey());
                 String level = getRomanNumber(enchant.getValue());
-                String enchantLine = "§7" + enchantName + " " + level + "\n";
-                tooltip.add(new TextComponent(enchantLine));
+                String enchantLine = "§7" + enchantName + " " + level;
+                builder.reset().append(enchantLine).italic(false);
+                builder.append("\n");
             }
         }
         
-        // 添加其他属性（不可破坏、特殊属性等）
+        // 添加其他属性（不可破坏等）
         if (meta != null) {
             List<String> extraInfo = new ArrayList<>();
             
@@ -571,22 +573,18 @@ public class ShanItem {
                 extraInfo.add("§7§o不可破坏");
             }
             
-            // 检查是否有隐藏标签
-            if (!meta.getItemFlags().isEmpty()) {
-                extraInfo.add("§7§o特殊属性");
-            }
-            
             if (!extraInfo.isEmpty()) {
                 // 添加空行
-                tooltip.add(new TextComponent("\n"));
+                builder.append("\n");
                 
                 for (String info : extraInfo) {
-                    tooltip.add(new TextComponent(info + "\n"));
+                    builder.reset().append(info).italic(false);
+                    builder.append("\n");
                 }
             }
         }
         
-        return tooltip.toArray(new BaseComponent[0]);
+        return builder.create();
     }
     
     /**
