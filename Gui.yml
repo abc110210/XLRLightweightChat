@@ -2,33 +2,37 @@
 # Gui界面显示
 # 第一页
 Page1:
-  name: "&a称号仓库 第1页"
+  name: "&6称号仓库 第 1 页"
   # 未穿戴时显示
   OffPlayerTitle:
     name: "%ChatPrefix%"
     Lore:
-      - "&a点击穿戴该称号"
+      - ""
+      - "&2● &7点击穿戴该称号"
   # 穿戴时显示
   OnPlayerTitle:
     name: "%ChatPrefix%"
     Lore:
-      - "&e当前穿戴该称号"
+      - ""
+      - "&3● &7当前穿戴"
   # 下一页
   Next:
-    name: "&c下一页"
+    name: "&f下一页"
     Lore:
       - ""
+      - "&3● &7点击进入下一页"
 # 第二页
 Page2:
-  name: "&a称号仓库 第2页"
+  name: "&6称号仓库 第 2 页"
   Back:
-    name: "&e上一页"
+    name: "&f上一页"
     Lore:
       - ""
+      - "&3● &7点击返回上一页"
 
 # 消息
 Message:
   # 重复点击已穿戴称号时显示
-  Equipped: "&e你已经穿戴着这个称号了!"
+  Equipped: "&a[&c寄寄之家&a] &7你当前已穿戴该称号!"
   # 玩家穿戴成功时显示
-  EquipDone: "&a成功穿戴称号: %ChatPrefix%"
+  EquipDone: "&a[&e寄寄之家&a] &7成功穿戴称号: %ChatPrefix%"

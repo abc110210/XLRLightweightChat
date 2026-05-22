@@ -25,9 +25,14 @@ PlayerTitle:
 Command:
   # 输入/xlrchat reload 后提示
   reload:
-    - "&a配置已重新加载"
-    - "&b已加载 %chat_format% 个聊天格式"
-    - "&b已加载 %color_config% 个变量颜色配置"
+    - "&7配置已重新加载"
+    - "&7已加载 &6%chat_format% &7个聊天格式"
+    - "&7已加载 &6%color_config% &7个变量颜色配置"
+  help:
+    - "&6===== [XLRightweightChat] ====="
+    - "&7- /xlrchat cp &6打开称号仓库"
+    - "&7- /xlrchat reload &6重载该插件"
+
 # 消息提示
 Message:
   # 没有权限时输出提示
@@ -36,3 +41,7 @@ Message:
   UnknownSubCmd: "&c未知的子命令"
   # 命令不是由玩家执行时
   NoPlayer: "&c此命令只能由玩家执行!"
+
+# 玩家在聊天栏输入[item]展示手里的物品 true 为开启 false 为关闭
+# 例子: 我现在手里有 [item]
+DisplayInHand: true
