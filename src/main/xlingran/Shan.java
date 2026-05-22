@@ -631,6 +631,16 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
+        String message = event.getMessage();
+        
+        // 处理 [item] 占位符 - 替换为手里拿着的物品
+        boolean displayInHand = getConfig().getBoolean("DisplayInHand", true);
+        if (displayInHand && message.contains("[item]")) {
+            ItemStack itemInHand = player.getInventory().getItemInMainHand();
+            String itemName = getItemDisplayName(itemInHand);
+            message = message.replace("[item]", itemName);
+        }
+        
         String matchedFormat = null;
 
         // 从上往下遍历所有聊天格式，找到玩家有权限的第一个格式
@@ -675,10 +685,10 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String result;
             if (colorConfig != null) {
                 // 应用颜色到消息
-                String coloredMessage = applyGradientColor(event.getMessage(), colorConfig);
+                String coloredMessage = applyGradientColor(message, colorConfig);
                 result = format.replace("%chat%", coloredMessage);
             } else {
-                result = format.replace("%chat%", event.getMessage());
+                result = format.replace("%chat%", message);
             }
 
             // 取消默认聊天事件
@@ -745,6 +755,23 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         }
 
         return null;
+    }
+    
+    /**
+     * 获取物品的显示名称
+     */
+    private String getItemDisplayName(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) {
+            return "空手";
+        }
+        
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null && meta.hasDisplayName()) {
+            return meta.getDisplayName();
+        }
+        
+        // 如果没有自定义名称，使用物品类型的本地化名称
+        return item.getType().toString().replace("_", " ");
     }
 
     private String applyGradientColor(String text, String colorConfig) {
