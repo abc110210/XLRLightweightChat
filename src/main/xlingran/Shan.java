@@ -690,13 +690,28 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             // 处理消息内容
             String result;
             if (colorConfig != null) {
-                // 应用渐变颜色到消息（此时 [item] 已被占位符替换）
-                String coloredMessage = applyGradientColor(message, colorConfig);
+                // 应用渐变颜色到消息
+                // 先移除占位符，避免被渐变颜色影响
+                String messageWithoutItem = message;
+                int itemPosition = -1;
                 
-                // 应用渐变颜色后，再替换回物品名称
-                // 物品名称包含 § 格式颜色代码，不会被影响
-                if (itemPlaceholder != null && itemName != null) {
-                    coloredMessage = coloredMessage.replace(itemPlaceholder, itemName);
+                if (itemPlaceholder != null) {
+                    itemPosition = message.indexOf(itemPlaceholder);
+                    if (itemPosition >= 0) {
+                        // 保存占位符前后的文本
+                        messageWithoutItem = message.replace(itemPlaceholder, "");
+                    }
+                }
+                
+                // 应用渐变颜色
+                String coloredMessage = applyGradientColor(messageWithoutItem, colorConfig);
+                
+                // 渐变颜色应用后，在原来的位置插入物品名称
+                if (itemPosition >= 0 && itemName != null) {
+                    // 在占位符的位置插入物品名称
+                    coloredMessage = coloredMessage.substring(0, itemPosition) + 
+                                    itemName + 
+                                    coloredMessage.substring(itemPosition);
                 }
                 
                 result = format.replace("%chat%", coloredMessage);
