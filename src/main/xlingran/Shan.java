@@ -633,15 +633,18 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         Player player = event.getPlayer();
         String message = event.getMessage();
         
-        // 处理 [item] 占位符 - 替换为手里拿着的物品
-        // 注意：必须在应用渐变颜色之前处理，否则物品颜色会被覆盖
+        // 处理 [item] 占位符
         boolean displayInHand = getConfig().getBoolean("DisplayInHand", true);
+        String itemPlaceholder = null;
+        String itemName = null;
+        
         if (displayInHand && message.contains("[item]")) {
+            // 保存物品信息，稍后替换
             ItemStack itemInHand = player.getInventory().getItemInMainHand();
-            String itemName = getItemDisplayName(itemInHand);
-            // 直接替换，物品名称已经包含完整的颜色代码（§格式）
-            // 这些颜色代码不会被后续的渐变颜色处理覆盖
-            message = message.replace("[item]", itemName);
+            itemName = getItemDisplayName(itemInHand);
+            // 使用唯一占位符，避免与聊天内容混淆
+            itemPlaceholder = "__ITEM_PLACEHOLDER__";
+            message = message.replace("[item]", itemPlaceholder);
         }
         
         String matchedFormat = null;
@@ -687,11 +690,21 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             // 处理消息内容
             String result;
             if (colorConfig != null) {
-                // 应用颜色到消息
-                // 注意：message 已经包含替换后的 [item]，其中的颜色代码不会被覆盖
+                // 应用渐变颜色到消息（此时 [item] 已被占位符替换）
                 String coloredMessage = applyGradientColor(message, colorConfig);
+                
+                // 应用渐变颜色后，再替换回物品名称
+                // 物品名称包含 § 格式颜色代码，不会被影响
+                if (itemPlaceholder != null && itemName != null) {
+                    coloredMessage = coloredMessage.replace(itemPlaceholder, itemName);
+                }
+                
                 result = format.replace("%chat%", coloredMessage);
             } else {
+                // 没有渐变颜色，直接替换
+                if (itemPlaceholder != null && itemName != null) {
+                    message = message.replace(itemPlaceholder, itemName);
+                }
                 result = format.replace("%chat%", message);
             }
 
