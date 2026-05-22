@@ -475,8 +475,8 @@ public class ShanItem {
         // 创建悬浮提示的 JSON 内容
         BaseComponent[] hoverComponents = createItemTooltipComponents(item);
         
-        // 创建文本组件
-        TextComponent itemComponent = new TextComponent(displayName);
+        // 创建文本组件 - 将 & 格式的颜色代码转换为 § 格式
+        TextComponent itemComponent = new TextComponent(ChatColor.translateAlternateColorCodes('&', displayName));
         
         // 设置悬浮事件 - 使用 SHOW_TEXT 显示完整的物品信息
         itemComponent.setHoverEvent(new HoverEvent(
@@ -489,12 +489,12 @@ public class ShanItem {
     
     /**
      * 创建物品悬浮提示的组件数组
-     * 包含物品名称、NBT 数据、Lore 等信息
+     * 按照游戏标准格式显示物品信息
      */
     public BaseComponent[] createItemTooltipComponents(ItemStack item) {
         List<BaseComponent> tooltip = new ArrayList<>();
         
-        // 添加物品名称
+        // 添加物品名称（标题）
         String displayName;
         ItemMeta meta = item.getItemMeta();
         
@@ -521,76 +521,63 @@ public class ShanItem {
             }
         }
         
+        // 标题行：物品名称
         TextComponent nameComponent = new TextComponent(displayName);
-        nameComponent.setBold(true);
-        nameComponent.setColor(net.md_5.bungee.api.ChatColor.GRAY);
+        nameComponent.setItalic(true); // 斜体
         tooltip.add(nameComponent);
         
         // 添加空行
         tooltip.add(new TextComponent(""));
         
-        // 添加数量信息
-        if (item.getAmount() > 1) {
-            TextComponent amountComponent = new TextComponent("数量: " + item.getAmount());
-            amountComponent.setColor(net.md_5.bungee.api.ChatColor.YELLOW);
-            tooltip.add(amountComponent);
-        }
-        
-        // 添加 Lore
+        // 添加 Lore（描述）- 按照第二张图的格式
         if (meta != null && meta.hasLore()) {
             List<String> lore = meta.getLore();
             if (lore != null && !lore.isEmpty()) {
-                // 添加空行
-                tooltip.add(new TextComponent(""));
-                
-                TextComponent loreHeader = new TextComponent("描述:");
-                loreHeader.setColor(net.md_5.bungee.api.ChatColor.GOLD);
-                loreHeader.setItalic(true);
-                tooltip.add(loreHeader);
-                
+                // 显示 "描述: " + Lore 内容
                 for (String loreLine : lore) {
-                    TextComponent loreComponent = new TextComponent("  " + ChatColor.translateAlternateColorCodes('&', loreLine));
-                    loreComponent.setColor(net.md_5.bungee.api.ChatColor.GRAY);
-                    loreComponent.setItalic(true);
+                    String coloredLore = ChatColor.translateAlternateColorCodes('&', loreLine);
+                    TextComponent loreComponent = new TextComponent(coloredLore);
+                    loreComponent.setItalic(false); // 不斜体，直接显示
                     tooltip.add(loreComponent);
                 }
             }
         }
         
-        // 添加 NBT 信息（如果有自定义 NBT）
-        if (meta != null) {
-            List<String> nbtInfo = new ArrayList<>();
-            
-            // 检查是否有附魔
-            if (meta.hasEnchants()) {
-                nbtInfo.add("§7附魔:");
-                for (Map.Entry<Enchantment, Integer> enchant : meta.getEnchants().entrySet()) {
-                    String enchantName = getEnchantmentChineseName(enchant.getKey());
-                    nbtInfo.add("  §8- " + enchantName + " " + getRomanNumber(enchant.getValue()));
-                }
+        // 添加附魔信息
+        if (meta != null && meta.hasEnchants()) {
+            // 在 Lore 和附魔之间添加空行
+            if (meta.hasLore()) {
+                tooltip.add(new TextComponent(""));
             }
+            
+            for (Map.Entry<Enchantment, Integer> enchant : meta.getEnchants().entrySet()) {
+                String enchantName = getEnchantmentChineseName(enchant.getKey());
+                String level = getRomanNumber(enchant.getValue());
+                String enchantLine = "§7" + enchantName + " " + level;
+                tooltip.add(new TextComponent(enchantLine));
+            }
+        }
+        
+        // 添加其他属性（不可破坏、特殊属性等）
+        if (meta != null) {
+            List<String> extraInfo = new ArrayList<>();
             
             // 检查是否有不可破坏属性
             if (meta.isUnbreakable()) {
-                nbtInfo.add("§7§o不可破坏");
+                extraInfo.add("§7§o不可破坏");
             }
             
             // 检查是否有隐藏标签
             if (!meta.getItemFlags().isEmpty()) {
-                nbtInfo.add("§7§o特殊属性");
+                extraInfo.add("§7§o特殊属性");
             }
             
-            if (!nbtInfo.isEmpty()) {
+            if (!extraInfo.isEmpty()) {
                 // 添加空行
                 tooltip.add(new TextComponent(""));
                 
-                TextComponent nbtHeader = new TextComponent("NBT 数据:");
-                nbtHeader.setColor(net.md_5.bungee.api.ChatColor.GREEN);
-                nbtHeader.setItalic(true);
-                tooltip.add(nbtHeader);
-                
-                for (String nbtLine : nbtInfo) {
-                    tooltip.add(new TextComponent(nbtLine));
+                for (String info : extraInfo) {
+                    tooltip.add(new TextComponent(info));
                 }
             }
         }
