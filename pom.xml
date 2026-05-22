@@ -26,6 +26,7 @@
                 <includes>
                     <include>plugin.yml</include>
                     <include>config.yml</include>
+                    <include>Gui.yml</include>
                 </includes>
             </resource>
         </resources>
