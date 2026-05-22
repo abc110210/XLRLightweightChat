@@ -558,8 +558,19 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
     }
 
     private String getPlayerTitle(Player player) {
-        // 从最高 ID (56) 开始检查，找到玩家拥有的最高权限称号
-        // 将 ID 按数字大小降序排序
+        String playerId = player.getUniqueId().toString();
+        
+        // 优先检查玩家当前穿戴的称号
+        String currentTitleId = playerCurrentTitle.get(playerId);
+        if (currentTitleId != null && playerTitles.containsKey(currentTitleId)) {
+            String title = playerTitles.get(currentTitleId);
+            // 处理称号中的颜色变量（如 %color2%）
+            title = processColorVariables(title);
+            // 只转换传统颜色代码，不影响已经处理好的 16 进制颜色
+            return ChatColor.translateAlternateColorCodes('&', title);
+        }
+        
+        // 如果没有穿戴称号，从最高 ID (56) 开始检查，找到玩家拥有的最高权限称号
         List<String> sortedIds = new ArrayList<>(playerTitles.keySet());
         sortedIds.sort((a, b) -> {
             try {
