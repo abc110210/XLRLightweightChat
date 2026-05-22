@@ -690,32 +690,28 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
             // 处理消息内容
             String result;
-            if (colorConfig != null) {
-                // 应用渐变颜色到消息
-                // 先将占位符移除，避免被渐变颜色处理
-                String messageWithoutItem = message;
-                int visiblePosition = itemPosition;
+            if (colorConfig != null && itemPlaceholder != null && itemPosition >= 0) {
+                // 有渐变颜色且有物品：分别处理物品前后的文本，保持渐变连续性
+                String beforeItem = message.substring(0, itemPosition);
+                String afterItem = message.substring(itemPosition + itemPlaceholder.length());
                 
-                if (itemPlaceholder != null && itemPosition >= 0) {
-                    // 计算占位符在移除后的位置
-                    messageWithoutItem = message.replace(itemPlaceholder, "");
-                    // 占位符位置不变，因为我们只是在后面插入
-                }
+                // 计算总可见字符数（不包括物品）
+                int totalVisibleChars = beforeItem.length() + afterItem.length();
                 
-                // 应用渐变颜色
-                String coloredMessage = applyGradientColor(messageWithoutItem, colorConfig);
+                // 分别对前后文本应用渐变，但使用连续的渐变进度
+                String beforeColored = applyGradientWithRange(beforeItem, colorConfig, 0, beforeItem.length(), totalVisibleChars);
+                String afterColored = applyGradientWithRange(afterItem, colorConfig, beforeItem.length(), afterItem.length(), totalVisibleChars);
                 
-                // 在原位置插入物品名称
-                if (itemPosition >= 0 && itemName != null && itemPosition <= coloredMessage.length()) {
-                    coloredMessage = coloredMessage.substring(0, itemPosition) + 
-                                    itemName + 
-                                    coloredMessage.substring(itemPosition);
-                }
-                
+                // 拼接：前文本 + 物品 + 后文本
+                String coloredMessage = beforeColored + itemName + afterColored;
+                result = format.replace("%chat%", coloredMessage);
+            } else if (colorConfig != null) {
+                // 有渐变颜色但没有物品：正常处理
+                String coloredMessage = applyGradientColor(message, colorConfig);
                 result = format.replace("%chat%", coloredMessage);
             } else {
                 // 没有渐变颜色，直接替换
-                if (itemPlaceholder != null && itemName != null) {
+                if (itemPlaceholder != null) {
                     message = message.replace(itemPlaceholder, itemName);
                 }
                 result = format.replace("%chat%", message);
@@ -818,15 +814,15 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 String[] parts = typeName.split("_");
                 StringBuilder friendlyName = new StringBuilder();
                 for (String part : parts) {
-                    if (friendlyName.length() > 0) {
+                    if (!friendlyName.isEmpty()) {
                         friendlyName.append(" ");
                     }
-                    if (part.length() > 0) {
+                    if (!part.isEmpty()) {
                         friendlyName.append(part.substring(0, 1).toUpperCase())
                                    .append(part.substring(1).toLowerCase());
                     }
                 }
-                displayName = "&f" + friendlyName.toString();
+                displayName = "&f" + friendlyName;
             }
         }
         
@@ -959,15 +955,15 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                 String[] parts = typeName.split("_");
                 StringBuilder friendlyName = new StringBuilder();
                 for (String part : parts) {
-                    if (friendlyName.length() > 0) {
+                    if (!friendlyName.isEmpty()) {
                         friendlyName.append(" ");
                     }
-                    if (part.length() > 0) {
+                    if (!part.isEmpty()) {
                         friendlyName.append(part.substring(0, 1).toUpperCase())
                                    .append(part.substring(1).toLowerCase());
                     }
                 }
-                return "&f" + friendlyName.toString();
+                return "&f" + friendlyName;
         }
     }
 
@@ -991,7 +987,74 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
 
         return text;
     }
-
+    
+    /**
+     * 应用渐变颜色到指定范围的文本，支持连续的渐变进度
+     * @param text 要处理的文本
+     * @param colorConfig 颜色配置
+     * @param rangeStart 当前文本在整个消息中的起始位置
+     * @param textLength 当前文本的长度
+     * @param totalLength 整个消息的总长度（不包括物品）
+     */
+    private String applyGradientWithRange(String text, String colorConfig, int rangeStart, int textLength, int totalLength) {
+        if (text.isEmpty() || totalLength == 0) {
+            return text;
+        }
+        
+        // 解析颜色配置
+        if (!colorConfig.contains("-")) {
+            // 单一颜色，直接应用
+            if (colorConfig.startsWith("#")) {
+                ChatColor color = ChatColor.of(colorConfig);
+                return color.toString() + text;
+            }
+            return text;
+        }
+        
+        String[] colors = colorConfig.split("-");
+        if (colors.length != 2) {
+            return text;
+        }
+        
+        String startHex = colors[0].replace("#", "");
+        String endHex = colors[1].replace("#", "");
+        
+        // 解析起始和结束颜色
+        java.awt.Color startColor = parseHexColor(startHex);
+        java.awt.Color endColor = parseHexColor(endHex);
+        
+        StringBuilder result = new StringBuilder();
+        int charIndex = 0; // 当前文本中的字符索引
+        
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            
+            // 跳过颜色代码
+            if (c == '§' && i + 1 < text.length()) {
+                result.append(c).append(text.charAt(i + 1));
+                i++;
+                continue;
+            }
+            
+            // 计算在整个消息中的全局位置
+            int globalIndex = rangeStart + charIndex;
+            float ratio = (float) globalIndex / (totalLength - 1);
+            
+            // 计算渐变颜色
+            int r = (int) (startColor.getRed() + (endColor.getRed() - startColor.getRed()) * ratio);
+            int g = (int) (startColor.getGreen() + (endColor.getGreen() - startColor.getGreen()) * ratio);
+            int b = (int) (startColor.getBlue() + (endColor.getBlue() - startColor.getBlue()) * ratio);
+            
+            String hexColor = String.format("#%02x%02x%02x", r, g, b);
+            ChatColor chatColor = ChatColor.of(hexColor);
+            
+            result.append(chatColor).append(c);
+            charIndex++;
+        }
+        
+        return result.toString();
+    }
+    
     private String applyGradient(String text, String startHex, String endHex) {
         if (text.isEmpty()) {
             return text;
