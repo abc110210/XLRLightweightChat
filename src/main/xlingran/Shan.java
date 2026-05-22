@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,6 +20,9 @@ public class Shan extends JavaPlugin implements Listener {
 
     private FileConfiguration config;
     private Map<String, String> colorVariables;
+    private Map<Integer, String> playerTitles; // 称号配置：ID -> 前缀
+    private final Map<UUID, String> playerCurrentTitles = new HashMap<>(); // 玩家当前穿戴的称号
+    private GuiManager guiManager; // GUI 管理器
 
     @Override
     public void onEnable() {
@@ -29,9 +33,14 @@ public class Shan extends JavaPlugin implements Listener {
         // 加载配置
         config = getConfig();
         loadColorVariables();
+        loadPlayerTitles();
         
         // 注册事件监听器
         getServer().getPluginManager().registerEvents(this, this);
+        
+        // 初始化 GUI 管理器
+        guiManager = new GuiManager(this);
+        getServer().getPluginManager().registerEvents(guiManager, this);
         
         getLogger().info("插件已加载");
     }
@@ -48,6 +57,7 @@ public class Shan extends JavaPlugin implements Listener {
         super.reloadConfig();
         config = getConfig();
         loadColorVariables();
+        loadPlayerTitles();
     }
 
     /**
@@ -56,10 +66,36 @@ public class Shan extends JavaPlugin implements Listener {
     private void loadColorVariables() {
         colorVariables = new HashMap<>();
         if (config.contains("Variable")) {
-            for (String key : config.getConfigurationSection("Variable").getKeys(false)) {
-                String value = config.getString("Variable." + key);
-                if (value != null) {
-                    colorVariables.put("%" + key + "%", value);
+            ConfigurationSection section = config.getConfigurationSection("Variable");
+            if (section != null) {
+                for (String key : section.getKeys(false)) {
+                    String value = section.getString(key);
+                    if (value != null) {
+                        colorVariables.put("%" + key + "%", value);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 加载称号配置
+     */
+    private void loadPlayerTitles() {
+        playerTitles = new TreeMap<>(); // 使用 TreeMap 保持 ID 顺序
+        if (config.contains("PlayerTitle")) {
+            ConfigurationSection section = config.getConfigurationSection("PlayerTitle");
+            if (section != null) {
+                for (String key : section.getKeys(false)) {
+                    try {
+                        int id = Integer.parseInt(key);
+                        String prefix = section.getString(key);
+                        if (prefix != null) {
+                            playerTitles.put(id, prefix);
+                        }
+                    } catch (NumberFormatException e) {
+                        getLogger().warning("称号 ID 格式错误: " + key);
+                    }
                 }
             }
         }
@@ -99,17 +135,48 @@ public class Shan extends JavaPlugin implements Listener {
 
     /**
      * 查找匹配的聊天格式（按优先级从上往下检查）
+     * 配置文件中位置靠上的格式优先级更高
+     * 找到第一个有权限的格式后立即返回，不再检查后续
      */
     private String findMatchingFormat(Player player) {
         if (!config.contains("Chat")) {
             return null;
         }
         
-        Set<String> formats = config.getConfigurationSection("Chat").getKeys(false);
+        ConfigurationSection section = config.getConfigurationSection("Chat");
+        if (section == null) {
+            return null;
+        }
+        
+        Set<String> formats = section.getKeys(false);
         for (String formatName : formats) {
             String permission = "xlr.chat." + formatName;
             if (player.hasPermission(permission)) {
-                return config.getString("Chat." + formatName);
+                return section.getString(formatName);
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * 查找匹配的称号（按优先级从上往下检查）
+     * 配置文件中 ID 小的优先级更高
+     * 找到第一个有权限的称号后立即返回，不再检查后续
+     */
+    private String findMatchingTitle(Player player) {
+        if (playerTitles.isEmpty()) {
+            return null;
+        }
+        
+        // TreeMap 已经按 ID 排序，从小到大检查
+        for (Map.Entry<Integer, String> entry : playerTitles.entrySet()) {
+            int id = entry.getKey();
+            String prefix = entry.getValue();
+            String permission = "xlr.chat.playertitle." + id;
+            
+            if (player.hasPermission(permission)) {
+                return prefix;
             }
         }
         
@@ -122,6 +189,16 @@ public class Shan extends JavaPlugin implements Listener {
     private String processFormat(String format, Player player, String message) {
         // 替换 %player%
         String result = format.replace("%player%", player.getName());
+        
+        // 查找并替换称号
+        String title = findMatchingTitle(player);
+        if (title != null) {
+            // 处理称号中的颜色变量
+            title = processTitleColors(title);
+            result = result.replace("%title%", title);
+        } else {
+            result = result.replace("%title%", "");
+        }
         
         // 先替换颜色变量 %color1%, %color2% 等（在 %chat% 之前）
         for (Map.Entry<String, String> entry : colorVariables.entrySet()) {
@@ -143,6 +220,56 @@ public class Shan extends JavaPlugin implements Listener {
         
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
+        
+        return result;
+    }
+
+    /**
+     * 获取称号配置
+     */
+    public Map<Integer, String> getPlayerTitles() {
+        return playerTitles;
+    }
+
+    /**
+     * 获取玩家当前穿戴的称号
+     */
+    public String getPlayerCurrentTitle(Player player) {
+        return playerCurrentTitles.get(player.getUniqueId());
+    }
+
+    /**
+     * 设置玩家当前穿戴的称号
+     */
+    public void setPlayerCurrentTitle(Player player, String title) {
+        if (title == null) {
+            playerCurrentTitles.remove(player.getUniqueId());
+        } else {
+            playerCurrentTitles.put(player.getUniqueId(), title);
+        }
+    }
+
+    /**
+     * 处理称号中的颜色变量
+     */
+    public String processTitleColors(String title) {
+        String result = title;
+        
+        // 替换颜色变量
+        for (Map.Entry<String, String> entry : colorVariables.entrySet()) {
+            if (result.contains(entry.getKey())) {
+                String gradientConfig = entry.getValue();
+                String placeholder = entry.getKey();
+                
+                // 对称号文本应用渐变
+                if (result.contains(placeholder)) {
+                    // 简单替换：移除占位符，后续由 ChatColor.translateAlternateColorCodes 处理
+                    result = result.replace(placeholder, "");
+                    // 应用渐变到整个称号
+                    result = applyGradient(gradientConfig, result);
+                }
+            }
+        }
         
         return result;
     }
@@ -278,19 +405,42 @@ public class Shan extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("xlrchat")) {
-            if (!sender.hasPermission("xlr.admin.reload")) {
-                sender.sendMessage("§c你没有权限执行此命令！");
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§c此命令只能由玩家执行！");
                 return true;
             }
             
+            // /xlrchat cp - 打开称号仓库
+            if (args.length > 0 && args[0].equalsIgnoreCase("cp")) {
+                if (!player.hasPermission("xlr.command.cp")) {
+                    player.sendMessage("§c你没有权限执行此命令！");
+                    return true;
+                }
+                
+                if (guiManager != null) {
+                    guiManager.openTitleGUI(player);
+                } else {
+                    player.sendMessage("§c称号系统未初始化！");
+                }
+                return true;
+            }
+            
+            // /xlrchat reload - 重载配置
             if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+                if (!player.hasPermission("xlr.admin.reload")) {
+                    player.sendMessage("§c你没有权限执行此命令！");
+                    return true;
+                }
+                
                 reloadConfig();
-                sender.sendMessage("§a配置已重新加载！");
-                getLogger().info("配置已重新加载 by " + sender.getName());
+                player.sendMessage("§a配置已重新加载！");
+                getLogger().info("配置已重新加载 by " + player.getName());
                 return true;
             }
             
-            sender.sendMessage("§e用法: /xlrchat reload");
+            player.sendMessage("§e用法:");
+            player.sendMessage("§e/xlrchat cp - 打开称号仓库");
+            player.sendMessage("§e/xlrchat reload - 重载配置");
             return true;
         }
         
