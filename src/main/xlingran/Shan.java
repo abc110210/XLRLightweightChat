@@ -220,8 +220,13 @@ public class Shan extends JavaPlugin implements Listener {
         // 替换 %player%
         String result = format.replace("%player%", player.getName());
         
-        // 查找并替换称号
-        String title = findMatchingTitle(player);
+        // 查找玩家当前穿戴的称号（优先使用玩家穿戴的称号，如果没有则查找最高权限称号）
+        String title = getPlayerCurrentTitle(player);
+        if (title == null) {
+            // 如果玩家没有穿戴称号，查找最高权限的称号
+            title = findMatchingTitle(player);
+        }
+        
         if (title != null) {
             // 处理称号中的颜色变量
             title = processTitleColors(title);
