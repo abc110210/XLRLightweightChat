@@ -918,7 +918,15 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             char c = text.charAt(i);
             // 跳过 § 颜色代码
             if (c == '§' && i + 1 < text.length()) {
-                i++;
+                char nextChar = text.charAt(i + 1);
+                // 检查是否是 16 进制颜色代码 §x§R§R§G§G§B§B
+                if (nextChar == 'x' || nextChar == 'X') {
+                    // 16 进制颜色代码占 14 个字符（§x§R§R§G§G§B§B）
+                    i += 13; // 跳过剩余的 13 个字符
+                    continue;
+                }
+                // 其他 § 颜色代码占 2 个字符
+                i++; // 跳过下一个字符
                 continue;
             }
             // 跳过 & 颜色代码
@@ -933,7 +941,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                     nextChar == 'm' || nextChar == 'M' ||
                     nextChar == 'n' || nextChar == 'N' ||
                     nextChar == 'o' || nextChar == 'O') {
-                    i++;
+                    i++; // 跳过下一个字符
                     continue;
                 }
             }
@@ -951,8 +959,18 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             
             // 跳过 § 颜色代码
             if (c == '§' && i + 1 < text.length()) {
+                char nextChar = text.charAt(i + 1);
+                // 检查是否是 16 进制颜色代码 §x§R§R§G§G§B§B
+                if (nextChar == 'x' || nextChar == 'X') {
+                    // 16 进制颜色代码占 14 个字符（§x§R§R§G§G§B§B）
+                    // 保留完整的 16 进制颜色代码
+                    result.append(text.substring(i, Math.min(i + 14, text.length())));
+                    i += 13; // 跳过剩余的 13 个字符
+                    continue;
+                }
+                // 其他 § 颜色代码，保留原有颜色代码，不添加渐变
                 result.append(c).append(text.charAt(i + 1));
-                i++;
+                i++; // 跳过下一个字符
                 continue;
             }
             
@@ -969,7 +987,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                     nextChar == 'n' || nextChar == 'N' ||
                     nextChar == 'o' || nextChar == 'O') {
                     result.append(c).append(nextChar);
-                    i++;
+                    i++; // 跳过下一个字符
                     continue;
                 }
             }
@@ -1021,7 +1039,15 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             char c = text.charAt(i);
             // 跳过 § 颜色代码
             if (c == '§' && i + 1 < text.length()) {
-                i++;
+                char nextChar = text.charAt(i + 1);
+                // 检查是否是 16 进制颜色代码 §x§R§R§G§G§B§B
+                if (nextChar == 'x' || nextChar == 'X') {
+                    // 16 进制颜色代码占 14 个字符（§x§R§R§G§G§B§B）
+                    i += 13; // 跳过剩余的 13 个字符
+                    continue;
+                }
+                // 其他 § 颜色代码占 2 个字符
+                i++; // 跳过下一个字符
                 continue;
             }
             // 跳过 & 颜色代码
@@ -1036,7 +1062,7 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
                     nextChar == 'm' || nextChar == 'M' ||
                     nextChar == 'n' || nextChar == 'N' ||
                     nextChar == 'o' || nextChar == 'O') {
-                    i++;
+                    i++; // 跳过下一个字符
                     continue;
                 }
             }
@@ -1054,7 +1080,16 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             
             // 跳过 § 颜色代码
             if (c == '§' && i + 1 < text.length()) {
-                // 保留原有颜色代码，不添加渐变
+                char nextChar = text.charAt(i + 1);
+                // 检查是否是 16 进制颜色代码 §x§R§R§G§G§B§B
+                if (nextChar == 'x' || nextChar == 'X') {
+                    // 16 进制颜色代码占 14 个字符（§x§R§R§G§G§B§B）
+                    // 保留完整的 16 进制颜色代码
+                    result.append(text.substring(i, Math.min(i + 14, text.length())));
+                    i += 13; // 跳过剩余的 13 个字符
+                    continue;
+                }
+                // 其他 § 颜色代码，保留原有颜色代码，不添加渐变
                 result.append(c).append(text.charAt(i + 1));
                 i++; // 跳过下一个字符
                 continue;
@@ -1110,9 +1145,9 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
         String currentTitleId = playerCurrentTitle.get(playerId);
         if (currentTitleId != null && playerTitles.containsKey(currentTitleId)) {
             String title = playerTitles.get(currentTitleId);
-            // 先处理颜色变量（如 %color2%）
+            // 先处理颜色变量（如 %color2%）- 应用渐变效果
             title = processColorVariables(title);
-            // 再转换传统颜色代码（& -> §）- 不会影响已经处理好的 16 进制颜色
+            // 再转换传统颜色代码（& -> §）
             title = ChatColor.translateAlternateColorCodes('&', title);
             return title;
         }
@@ -1134,9 +1169,9 @@ public class Shan extends JavaPlugin implements Listener, CommandExecutor {
             String permission = "xlr.chat.playertitle." + id;
             if (player.hasPermission(permission)) {
                 String title = playerTitles.get(id);
-                // 先处理颜色变量（如 %color2%）
+                // 先处理颜色变量（如 %color2%）- 应用渐变效果
                 title = processColorVariables(title);
-                // 再转换传统颜色代码（& -> §）- 不会影响已经处理好的 16 进制颜色
+                // 再转换传统颜色代码（& -> §）
                 title = ChatColor.translateAlternateColorCodes('&', title);
                 return title;
             }
