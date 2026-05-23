@@ -48,3 +48,11 @@ Message:
 Cmd:
   playerDataNo: "无法保存玩家数据!"
   playerUUIDNo: "无效的玩家UUID: %uuid%"
+
+# %player% 变量，相当于玩家鼠标挪到这个变量的时候
+player:
+  # 悬浮字体显示
+  - ""
+  - "&a> 点我私聊"
+  # 点击悬浮字体后直接打开聊天栏补全指令
+  - command: msg %player%
