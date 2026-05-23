@@ -266,18 +266,11 @@ public class GuiManager implements Listener {
         
         // 通过标题判断是否是称号仓库 GUI
         String title = event.getView().getTitle();
-        
-        // 调试：打印实际标题
-        plugin.getLogger().info("[GUI调试] 点击事件触发 - 标题: " + title);
-        
         if (!title.contains("称号仓库")) {
-            plugin.getLogger().info("[GUI调试] 标题不包含'称号仓库'，跳过处理");
             return;
         }
 
-        plugin.getLogger().info("[GUI调试] 开始取消事件");
         event.setCancelled(true); // 禁止拿取物品
-        plugin.getLogger().info("[GUI调试] 事件已取消 - 槽位: " + event.getSlot());
 
         int slot = event.getSlot();
         Inventory topInventory = event.getView().getTopInventory();

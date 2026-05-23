@@ -14,6 +14,11 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +36,10 @@ public class Shan extends JavaPlugin implements Listener {
     private GuiManager guiManager; // GUI 管理器
     private File playerDataFile; // 玩家数据文件
     private FileConfiguration playerData; // 玩家数据配置
+    
+    // 悬浮提示配置
+    private List<String> playerHoverLore; // 玩家名称悬浮提示内容
+    private String playerClickCommand; // 点击后执行的命令
 
     @Override
     public void onEnable() {
@@ -43,6 +52,7 @@ public class Shan extends JavaPlugin implements Listener {
         loadGuiConfig();
         loadColorVariables();
         loadPlayerTitles();
+        loadPlayerHoverConfig();
         
         // 加载玩家数据
         loadPlayerData();
@@ -154,6 +164,7 @@ public class Shan extends JavaPlugin implements Listener {
         loadGuiConfig();
         loadColorVariables();
         loadPlayerTitles();
+        loadPlayerHoverConfig();
         // 重新加载玩家数据
         loadPlayerData();
     }
@@ -200,6 +211,28 @@ public class Shan extends JavaPlugin implements Listener {
     }
 
     /**
+     * 加载玩家悬浮提示配置
+     */
+    private void loadPlayerHoverConfig() {
+        playerHoverLore = new ArrayList<>();
+        playerClickCommand = null;
+        
+        if (config.contains("player")) {
+            List<String> playerConfig = config.getStringList("player");
+            
+            for (String line : playerConfig) {
+                if (line.startsWith("command:")) {
+                    // 这是点击命令配置
+                    playerClickCommand = line.substring(8); // 移除 "command:" 前缀
+                } else {
+                    // 这是悬浮提示文本
+                    playerHoverLore.add(line);
+                }
+            }
+        }
+    }
+
+    /**
      * 监听聊天事件
      */
     @EventHandler
@@ -231,11 +264,11 @@ public class Shan extends JavaPlugin implements Listener {
             return;
         }
         
-        // 处理格式字符串
-        String processedFormat = processFormat(format, player, message);
+        // 处理格式字符串（返回 BaseComponent[] 以支持悬浮提示）
+        BaseComponent[] components = processFormatToComponent(format, player, message);
         
         // 广播消息
-        broadcastProcessedMessage(processedFormat);
+        broadcastProcessedMessage(components);
     }
 
     /**
@@ -290,9 +323,9 @@ public class Shan extends JavaPlugin implements Listener {
     /**
      * 处理格式字符串，替换占位符并应用颜色
      */
-    private String processFormat(String format, Player player, String message) {
-        // 替换 %player%
-        String result = format.replace("%player%", player.getName());
+    private BaseComponent[] processFormatToComponent(String format, Player player, String message) {
+        // 构建完整的消息
+        String result = format;
         
         // 只使用玩家当前穿戴的称号（不穿戴则不显示）
         String title = getPlayerCurrentTitle(player);
@@ -327,7 +360,59 @@ public class Shan extends JavaPlugin implements Listener {
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
         
-        return result;
+        // 检查是否包含 %player% 且需要悬浮提示
+        if (result.contains("%player%") && playerHoverLore != null && !playerHoverLore.isEmpty()) {
+            return buildComponentWithHover(result, player);
+        }
+        
+        // 不需要悬浮提示，直接替换 %player%
+        result = result.replace("%player%", player.getName());
+        return new BaseComponent[]{new TextComponent(result)};
+    }
+
+    /**
+     * 构建带悬浮提示的组件
+     */
+    private BaseComponent[] buildComponentWithHover(String message, Player player) {
+        // 分割消息，找到 %player% 的位置
+        String[] parts = message.split("%player%", 2);
+        
+        if (parts.length == 0) {
+            return new BaseComponent[]{new TextComponent(message)};
+        }
+        
+        ComponentBuilder builder = new ComponentBuilder();
+        
+        // 添加前面的文本
+        if (parts.length > 0 && !parts[0].isEmpty()) {
+            builder.append(parts[0]);
+        }
+        
+        // 创建玩家名称组件（带悬浮提示和点击事件）
+        TextComponent playerComponent = new TextComponent(player.getName());
+        
+        // 设置悬浮提示
+        BaseComponent[] hoverComponents = buildHoverComponents();
+        if (hoverComponents != null && hoverComponents.length > 0) {
+            playerComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hoverComponents));
+        }
+        
+        // 设置点击事件（打开聊天栏补全指令）
+        if (playerClickCommand != null && !playerClickCommand.isEmpty()) {
+            String command = playerClickCommand.replace("%player%", player.getName());
+            // 使用 SUGGEST_COMMAND 动作，在聊天栏中预填命令
+            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/" + command));
+        }
+        
+        // 添加玩家名称
+        builder.append(playerComponent);
+        
+        // 添加后面的文本
+        if (parts.length > 1 && !parts[1].isEmpty()) {
+            builder.append(parts[1]);
+        }
+        
+        return builder.create();
     }
 
     /**
@@ -496,12 +581,35 @@ public class Shan extends JavaPlugin implements Listener {
     }
 
     /**
-     * 广播处理后的消息
+     * 广播处理后的消息（支持 BaseComponent）
      */
-    private void broadcastProcessedMessage(String message) {
+    private void broadcastProcessedMessage(BaseComponent[] components) {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(message);
+            player.spigot().sendMessage(components);
         }
+    }
+
+    /**
+     * 构建悬浮提示组件
+     */
+    private BaseComponent[] buildHoverComponents() {
+        if (playerHoverLore == null || playerHoverLore.isEmpty()) {
+            return null;
+        }
+        
+        ComponentBuilder builder = new ComponentBuilder();
+        
+        for (int i = 0; i < playerHoverLore.size(); i++) {
+            String line = playerHoverLore.get(i);
+            String translated = ChatColor.translateAlternateColorCodes('&', line);
+            
+            if (i > 0) {
+                builder.append("\n");
+            }
+            builder.append(translated);
+        }
+        
+        return builder.create();
     }
 
     /**
