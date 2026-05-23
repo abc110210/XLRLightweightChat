@@ -6,12 +6,17 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,10 +24,13 @@ import java.util.regex.Pattern;
 public class Shan extends JavaPlugin implements Listener {
 
     private FileConfiguration config;
+    private FileConfiguration guiConfig; // Gui.yml 配置
     private Map<String, String> colorVariables;
     private Map<Integer, String> playerTitles; // 称号配置：ID -> 前缀
     private final Map<UUID, String> playerCurrentTitles = new HashMap<>(); // 玩家当前穿戴的称号
     private GuiManager guiManager; // GUI 管理器
+    private File playerDataFile; // 玩家数据文件
+    private FileConfiguration playerData; // 玩家数据配置
 
     @Override
     public void onEnable() {
@@ -32,8 +40,12 @@ public class Shan extends JavaPlugin implements Listener {
         
         // 加载配置
         config = getConfig();
+        loadGuiConfig();
         loadColorVariables();
         loadPlayerTitles();
+        
+        // 加载玩家数据
+        loadPlayerData();
         
         // 注册事件监听器
         getServer().getPluginManager().registerEvents(this, this);
@@ -47,7 +59,90 @@ public class Shan extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        // 保存玩家数据
+        savePlayerData();
         getLogger().info("插件已卸载");
+    }
+
+    /**
+     * 加载Gui.yml配置
+     */
+    private void loadGuiConfig() {
+        File guiFile = new File(getDataFolder(), "Gui.yml");
+        if (!guiFile.exists()) {
+            saveResource("Gui.yml", false);
+        }
+        guiConfig = YamlConfiguration.loadConfiguration(guiFile);
+    }
+
+    /**
+     * 加载玩家数据
+     */
+    private void loadPlayerData() {
+        playerDataFile = new File(getDataFolder(), "playerdata.yml");
+        if (!playerDataFile.exists()) {
+            playerData = new YamlConfiguration();
+        } else {
+            playerData = YamlConfiguration.loadConfiguration(playerDataFile);
+        }
+        
+        // 加载所有在线玩家的称号数据
+        for (Map.Entry<String, Object> entry : playerData.getValues(false).entrySet()) {
+            try {
+                UUID uuid = UUID.fromString(entry.getKey());
+                String title = entry.getValue().toString();
+                playerCurrentTitles.put(uuid, title);
+            } catch (IllegalArgumentException e) {
+                String uuidErrMsg = config.getString("Cmd.playerUUIDNo", "无效的玩家UUID: %uuid%");
+                uuidErrMsg = uuidErrMsg.replace("%uuid%", entry.getKey());
+                getLogger().warning(uuidErrMsg);
+            }
+        }
+    }
+
+    /**
+     * 保存玩家数据
+     */
+    private void savePlayerData() {
+        if (playerData == null) {
+            playerData = new YamlConfiguration();
+        }
+        
+        // 清空旧数据
+        playerData = new YamlConfiguration();
+        
+        // 保存所有玩家的称号数据
+        for (Map.Entry<UUID, String> entry : playerCurrentTitles.entrySet()) {
+            playerData.set(entry.getKey().toString(), entry.getValue());
+        }
+        
+        // 保存到文件
+        try {
+            playerData.save(playerDataFile);
+        } catch (IOException e) {
+            String saveErrMsg = config.getString("Cmd.playerDataNo", "无法保存玩家数据!");
+            getLogger().severe(saveErrMsg + " " + e.getMessage());
+        }
+    }
+
+    /**
+     * 监听玩家加入事件，加载称号数据
+     */
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        
+        // 如果玩家数据已加载，不需要额外操作
+        // 称号数据已经在 loadPlayerData() 中加载
+    }
+
+    /**
+     * 监听玩家退出事件，保存称号数据
+     */
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        // 玩家退出时立即保存数据
+        savePlayerData();
     }
 
     /**
@@ -56,8 +151,11 @@ public class Shan extends JavaPlugin implements Listener {
     public void reloadConfig() {
         super.reloadConfig();
         config = getConfig();
+        loadGuiConfig();
         loadColorVariables();
         loadPlayerTitles();
+        // 重新加载玩家数据
+        loadPlayerData();
     }
 
     /**
@@ -240,6 +338,13 @@ public class Shan extends JavaPlugin implements Listener {
     }
 
     /**
+     * 获取Gui配置
+     */
+    public FileConfiguration getGuiConfig() {
+        return guiConfig;
+    }
+
+    /**
      * 获取玩家当前穿戴的称号
      */
     public String getPlayerCurrentTitle(Player player) {
@@ -403,8 +508,8 @@ public class Shan extends JavaPlugin implements Listener {
      * 广播原始消息（备用方法）
      */
     private void broadcastMessage(String playerName, String message) {
-        String formatted = "§a" + playerName + ": §f" + message;
-        broadcastProcessedMessage(formatted);
+        String formatted = "&a" + playerName + ": &f" + message;
+        broadcastProcessedMessage(ChatColor.translateAlternateColorCodes('&', formatted));
     }
 
     /**
@@ -413,45 +518,93 @@ public class Shan extends JavaPlugin implements Listener {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("xlrchat")) {
+            // 检查是否由玩家执行
             if (!(sender instanceof Player player)) {
-                sender.sendMessage("§c此命令只能由玩家执行！");
+                String noPlayerMsg = config.getString("Message.NoPlayer", "&c此命令只能由玩家执行!");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', noPlayerMsg));
                 return true;
             }
             
+            // 没有参数或参数为空时显示帮助
+            if (args.length == 0) {
+                sendHelpMessage(player);
+                return true;
+            }
+            
+            String subCommand = args[0].toLowerCase();
+            
             // /xlrchat cp - 打开称号仓库
-            if (args.length > 0 && args[0].equalsIgnoreCase("cp")) {
+            if (subCommand.equals("cp")) {
                 if (!player.hasPermission("xlr.command.cp")) {
-                    player.sendMessage("§c你没有权限执行此命令！");
+                    String noPermMsg = config.getString("Message.NoPermission", "&c你没有权限执行此命令");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermMsg));
                     return true;
                 }
                 
                 if (guiManager != null) {
                     guiManager.openTitleGUI(player);
                 } else {
-                    player.sendMessage("§c称号系统未初始化！");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&c称号系统未初始化！"));
                 }
                 return true;
             }
             
             // /xlrchat reload - 重载配置
-            if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
+            if (subCommand.equals("reload")) {
                 if (!player.hasPermission("xlr.admin.reload")) {
-                    player.sendMessage("§c你没有权限执行此命令！");
+                    String noPermMsg = config.getString("Message.NoPermission", "&c你没有权限执行此命令");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', noPermMsg));
                     return true;
                 }
                 
                 reloadConfig();
-                player.sendMessage("§a配置已重新加载！");
-                getLogger().info("配置已重新加载 by " + player.getName());
+                
+                // 发送重载消息（支持多行）
+                List<String> reloadMessages = config.getStringList("Command.reload");
+                if (reloadMessages.isEmpty()) {
+                    // 默认消息
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7配置已重新加载"));
+                } else {
+                    for (String msg : reloadMessages) {
+                        // 替换占位符
+                        msg = msg.replace("%chat_format%", String.valueOf(colorVariables.size()));
+                        msg = msg.replace("%color_config%", String.valueOf(playerTitles.size()));
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+                    }
+                }
                 return true;
             }
             
-            player.sendMessage("§e用法:");
-            player.sendMessage("§e/xlrchat cp - 打开称号仓库");
-            player.sendMessage("§e/xlrchat reload - 重载配置");
+            // /xlrchat help - 显示帮助
+            if (subCommand.equals("help")) {
+                sendHelpMessage(player);
+                return true;
+            }
+            
+            // 未知子命令
+            String unknownMsg = config.getString("Message.UnknownSubCmd", "&c未知的子命令");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', unknownMsg));
             return true;
         }
         
         return false;
+    }
+    
+    /**
+     * 发送帮助信息
+     */
+    private void sendHelpMessage(Player player) {
+        List<String> helpMessages = config.getStringList("Command.help");
+        if (helpMessages.isEmpty()) {
+            // 默认帮助信息
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&6===== [XLRightweightChat] ====="));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7- /xlrchat cp &6打开称号仓库"));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7- /xlrchat reload &6重载该插件"));
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&7- /xlrchat help &6显示帮助"));
+        } else {
+            for (String msg : helpMessages) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
+            }
+        }
     }
 }

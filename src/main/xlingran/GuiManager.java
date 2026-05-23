@@ -46,7 +46,9 @@ public class GuiManager implements Listener {
      * 创建 GUI 界面
      */
     private Inventory createGUI(Player player, int page) {
-        String guiTitle = page == 0 ? "&6称号仓库" : "&6称号仓库第" + (page + 1) + "页";
+        // 从 Gui.yml 读取标题
+        String pageConfigPath = page == 0 ? "Page1.name" : "Page2.name";
+        String guiTitle = plugin.getGuiConfig().getString(pageConfigPath, "&6称号仓库");
         Inventory gui = Bukkit.createInventory(null, INVENTORY_SIZE, ChatColor.translateAlternateColorCodes('&', guiTitle));
 
         // 1. 填充黑色玻璃板边框
@@ -146,6 +148,9 @@ public class GuiManager implements Listener {
     private ItemStack createTitleNameTag(Player player, TitleInfo titleInfo) {
         // 处理颜色变量
         String displayName = plugin.processTitleColors(titleInfo.prefix());
+        
+        // 替换占位符 %ChatPrefix%
+        displayName = displayName.replace("%ChatPrefix%", titleInfo.prefix());
 
         // 转换为传统颜色代码
         displayName = ChatColor.translateAlternateColorCodes('&', displayName);
@@ -160,15 +165,23 @@ public class GuiManager implements Listener {
             String currentTitle = plugin.getPlayerCurrentTitle(player);
             boolean isWearing = currentTitle != null && currentTitle.equals(titleInfo.prefix());
 
-            // 设置 Lore
+            // 从 Gui.yml 读取 Lore 配置
             List<String> lore = new ArrayList<>();
             if (isWearing) {
-                lore.add(ChatColor.GREEN + "当前正在穿戴该称号");
+                // 穿戴时显示
+                List<String> onLore = plugin.getGuiConfig().getStringList("Page1.OnPlayerTitle.Lore");
+                for (String line : onLore) {
+                    lore.add(ChatColor.translateAlternateColorCodes('&', line));
+                }
                 // 添加附魔特效
                 meta.addEnchant(Enchantment.UNBREAKING, 1, true);
                 meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             } else {
-                lore.add(ChatColor.YELLOW + "当前未穿戴该称号");
+                // 未穿戴时显示
+                List<String> offLore = plugin.getGuiConfig().getStringList("Page1.OffPlayerTitle.Lore");
+                for (String line : offLore) {
+                    lore.add(ChatColor.translateAlternateColorCodes('&', line));
+                }
             }
 
             meta.setLore(lore);
@@ -187,8 +200,12 @@ public class GuiManager implements Listener {
         if (currentPage == 0) {
             // 第1页：显示下一页按钮
             if (totalPages > 1) {
-                // 有第2页，显示白色玻璃板 "下一页"
-                ItemStack nextPage = createItem(Material.WHITE_STAINED_GLASS_PANE, "&f下一页");
+                // 有第2页，显示下一页按钮
+                String materialName = plugin.getGuiConfig().getString("Page1.Next.material", "WHITE_STAINED_GLASS_PANE");
+                Material material = Material.valueOf(materialName);
+                String nextName = plugin.getGuiConfig().getString("Page1.Next.name", "&f下一页");
+                List<String> nextLore = plugin.getGuiConfig().getStringList("Page1.Next.Lore");
+                ItemStack nextPage = createItemWithLore(material, nextName, nextLore);
                 gui.setItem(pageButtonSlot, nextPage);
             } else {
                 // 只有一页，显示黑色玻璃板
@@ -196,8 +213,12 @@ public class GuiManager implements Listener {
                 gui.setItem(pageButtonSlot, noPage);
             }
         } else {
-            // 第2页及以后：始终显示红色玻璃板 "返回上一页"
-            ItemStack prevPage = createItem(Material.RED_STAINED_GLASS_PANE, "&c返回上一页");
+            // 第2页及以后：显示返回上一页按钮
+            String materialName = plugin.getGuiConfig().getString("Page2.Back.material", "RED_STAINED_GLASS_PANE");
+            Material material = Material.valueOf(materialName);
+            String backName = plugin.getGuiConfig().getString("Page2.Back.name", "&f上一页");
+            List<String> backLore = plugin.getGuiConfig().getStringList("Page2.Back.Lore");
+            ItemStack prevPage = createItemWithLore(material, backName, backLore);
             gui.setItem(pageButtonSlot, prevPage);
         }
     }
@@ -210,6 +231,24 @@ public class GuiManager implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    /**
+     * 创建带 Lore 的物品
+     */
+    private ItemStack createItemWithLore(Material material, String name, List<String> lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+            List<String> translatedLore = new ArrayList<>();
+            for (String line : lore) {
+                translatedLore.add(ChatColor.translateAlternateColorCodes('&', line));
+            }
+            meta.setLore(translatedLore);
             item.setItemMeta(meta);
         }
         return item;
@@ -296,7 +335,9 @@ public class GuiManager implements Listener {
         if (currentTitle != null && currentTitle.equals(clickedTitle.prefix())) {
             // 取消穿戴
             plugin.setPlayerCurrentTitle(player, null);
-            player.sendMessage(ChatColor.GREEN + "已取消穿戴称号");
+            // 从 Gui.yml 读取消息
+            String equipMessage = plugin.getGuiConfig().getString("Message.Equipped", "&a[&c寄寄之家&a] &7已取消穿戴称号");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', equipMessage));
         } else {
             // 穿戴称号
             plugin.setPlayerCurrentTitle(player, clickedTitle.prefix());
@@ -304,7 +345,10 @@ public class GuiManager implements Listener {
             // 处理颜色后显示
             String processedTitle = plugin.processTitleColors(clickedTitle.prefix());
             processedTitle = ChatColor.translateAlternateColorCodes('&', processedTitle);
-            player.sendMessage(ChatColor.GREEN + "已穿戴称号: " + processedTitle);
+            // 从 Gui.yml 读取消息
+            String equipDoneMessage = plugin.getGuiConfig().getString("Message.EquipDone", "&a[&e寄寄之家&a] &7成功穿戴称号: %title%");
+            equipDoneMessage = equipDoneMessage.replace("%title%", processedTitle);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', equipDoneMessage));
         }
         
         // 刷新 GUI
