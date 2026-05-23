@@ -31,7 +31,8 @@ public class Shan extends JavaPlugin implements Listener {
     private FileConfiguration config;
     private FileConfiguration guiConfig; // Gui.yml 配置
     private Map<String, String> colorVariables;
-    private Map<Integer, String> playerTitles; // 称号配置：ID -> 前缀
+    private Map<Integer, String> playerTitles; // 称号配置：ID -> 名称
+    private Map<Integer, List<String>> playerTitleLore; // 称号描述：ID -> Lore列表
     private final Map<UUID, String> playerCurrentTitles = new HashMap<>(); // 玩家当前穿戴的称号
     private GuiManager guiManager; // GUI 管理器
     private File playerDataFile; // 玩家数据文件
@@ -206,15 +207,36 @@ public class Shan extends JavaPlugin implements Listener {
      */
     private void loadPlayerTitles() {
         playerTitles = new TreeMap<>(); // 使用 TreeMap 保持 ID 顺序
+        playerTitleLore = new TreeMap<>(); // 称号描述
+        
         if (config.contains("PlayerTitle")) {
             ConfigurationSection section = config.getConfigurationSection("PlayerTitle");
             if (section != null) {
                 for (String key : section.getKeys(false)) {
                     try {
                         int id = Integer.parseInt(key);
-                        String prefix = section.getString(key);
-                        if (prefix != null) {
-                            playerTitles.put(id, prefix);
+                        
+                        // 新格式：包含 name 和 Lore
+                        if (section.isConfigurationSection(key)) {
+                            ConfigurationSection titleSection = section.getConfigurationSection(key);
+                            if (titleSection != null) {
+                                String name = titleSection.getString("name");
+                                if (name != null) {
+                                    playerTitles.put(id, name);
+                                }
+                                
+                                List<String> lore = titleSection.getStringList("Lore");
+                                if (lore != null && !lore.isEmpty()) {
+                                    playerTitleLore.put(id, lore);
+                                }
+                            }
+                        } 
+                        // 旧格式：直接字符串（向后兼容）
+                        else {
+                            String prefix = section.getString(key);
+                            if (prefix != null) {
+                                playerTitles.put(id, prefix);
+                            }
                         }
                     } catch (NumberFormatException e) {
                         // 忽略非数字 ID
@@ -222,6 +244,8 @@ public class Shan extends JavaPlugin implements Listener {
                 }
             }
         }
+        
+        getLogger().info("[调试] 称号配置加载完成: " + playerTitles.size() + " 个称号");
     }
 
     /**
@@ -703,6 +727,13 @@ public class Shan extends JavaPlugin implements Listener {
      */
     public Map<Integer, String> getPlayerTitles() {
         return playerTitles;
+    }
+    
+    /**
+     * 获取称号描述配置
+     */
+    public Map<Integer, List<String>> getPlayerTitleLore() {
+        return playerTitleLore;
     }
 
     /**

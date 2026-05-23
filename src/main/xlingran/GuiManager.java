@@ -168,19 +168,33 @@ public class GuiManager implements Listener {
 
             // 从 Gui.yml 读取 Lore 配置
             List<String> lore = new ArrayList<>();
+            List<String> templateLore;
+            
             if (isWearing) {
                 // 穿戴时显示
-                List<String> onLore = plugin.getGuiConfig().getStringList("Page1.OnPlayerTitle.Lore");
-                for (String line : onLore) {
-                    lore.add(ChatColor.translateAlternateColorCodes('&', line));
-                }
+                templateLore = plugin.getGuiConfig().getStringList("Page1.OnPlayerTitle.Lore");
                 // 添加附魔特效
                 meta.addEnchant(Enchantment.UNBREAKING, 1, true);
                 meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             } else {
                 // 未穿戴时显示
-                List<String> offLore = plugin.getGuiConfig().getStringList("Page1.OffPlayerTitle.Lore");
-                for (String line : offLore) {
+                templateLore = plugin.getGuiConfig().getStringList("Page1.OffPlayerTitle.Lore");
+            }
+            
+            // 处理 Lore 模板，插入 %Lore%
+            for (String line : templateLore) {
+                if (line.contains("%Lore%")) {
+                    // 获取称号描述
+                    List<String> titleLore = plugin.getPlayerTitleLore().get(titleInfo.id());
+                    if (titleLore != null && !titleLore.isEmpty()) {
+                        // 插入所有描述行
+                        for (String loreLine : titleLore) {
+                            lore.add(ChatColor.translateAlternateColorCodes('&', loreLine));
+                        }
+                    }
+                    // 如果 Lore 为空，则 %Lore% 不插入任何内容
+                } else {
+                    // 普通行，直接添加
                     lore.add(ChatColor.translateAlternateColorCodes('&', line));
                 }
             }
