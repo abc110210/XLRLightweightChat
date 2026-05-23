@@ -3,8 +3,8 @@
 # 聊天格式顺序 [前缀] [称号] [玩家名称] : [16进制颜色] [聊天内容]
 # 可多个聊天格式，格式名称可自定义
 Chat:
-  op: "%title% %color1%%player%: %asd445%chat%" # 优先检查权限
-  default: "%title% &a%player%: %color3%%chat%" # 后续检查权限
+  op: "%title% %color1%%player%: %asd445%%chat%" # 优先检查权限
+  default: "%title% &a%player%: %color2%%chat%" # 后续检查权限
 
 # 16进制渐变颜色变量配置，可以创建多个
 # 可以在上面使用变量是 %color1% %color2%
@@ -51,6 +51,13 @@ Required:
     - "&a> &b需要该玩家同意!"
     # 直接执行指令
     - RunCommand: tpa %player%
+
+# 物品展示，true为开启，false为关闭
+# 玩家手握物品输入 [item] 可展示手里的物品
+Displayitem: true
+# 如果上面的选项开启后，可以自己选择物品语言
+DiaplayLanguage: zh-cn
+
 
 # 输入命令，命令输出提示
 Command:
