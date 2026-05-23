@@ -40,8 +40,6 @@ Required:
     # 直接执行指令
     - RunCommand: tpa %player%
 
-chat
-
 # 输入命令，命令输出提示
 Command:
   # 输入/xlrchat reload 后提示
