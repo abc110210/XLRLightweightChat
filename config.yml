@@ -3,7 +3,7 @@
 # 聊天格式顺序 [前缀] [称号] [玩家名称] : [16进制颜色] [聊天内容]
 # 可多个聊天格式，格式名称可自定义
 Chat:
-  op: "%title% %asd445%%player%: %color1%%chat%" # 优先检查权限
+  op: "%title% %color1%%player%: %asd445%chat%" # 优先检查权限
   default: "%title% &a%player%: %color3%%chat%" # 后续检查权限
 
 # 16进制渐变颜色变量配置，可以创建多个
