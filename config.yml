@@ -3,7 +3,7 @@
 # 聊天格式顺序 [前缀] [称号] [玩家名称] : [16进制颜色] [聊天内容]
 # 可多个聊天格式，格式名称可自定义
 Chat:
-  op: "%title% &a%player%: %color1%%chat%" # 优先检查权限
+  op: "%title% %asd445%%player%: %color1%%chat%" # 优先检查权限
   default: "%title% &a%player%: %color3%%chat%" # 后续检查权限
 
 # 16进制渐变颜色变量配置，可以创建多个
@@ -12,6 +12,8 @@ Variable:
   color1: "#e4afcb-#7edbdc"
   color2: "#e4afcb-#eef1f5"
   color3: "#00c6fb-#005bea"
+  color4: "#d4fc79-#96e6a1-#84fab0"
+  asd445: "#30cfd0-#330867-#a8edea-#fed6e3"
 
 # 最多拥有 56 个称号，最少 1 个
 # 优先级从上往下开始检查，权限节点是 xlr.playertitle.ID
