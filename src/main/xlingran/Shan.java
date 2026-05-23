@@ -226,7 +226,7 @@ public class Shan extends JavaPlugin implements Listener {
                                 }
                                 
                                 List<String> lore = titleSection.getStringList("Lore");
-                                if (lore != null && !lore.isEmpty()) {
+                                if (!lore.isEmpty()) {
                                     playerTitleLore.put(id, lore);
                                 }
                             }
@@ -723,8 +723,6 @@ public class Shan extends JavaPlugin implements Listener {
             }
             String finalCommand = commandBuilder.toString();
             playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, finalCommand));
-        } else {
-            // 未设置点击事件
         }
         
         // 添加玩家名称
@@ -1061,13 +1059,18 @@ public class Shan extends JavaPlugin implements Listener {
                 }
             }
             
-            // 再转换传统颜色代码
+            // 转换传统颜色代码
             String translated = ChatColor.translateAlternateColorCodes('&', processedLine);
             
             if (i > 0) {
                 builder.append("\n");
             }
-            builder.append(translated);
+            
+            // 关键修改：使用 parseLegacyTextWithHexColors 解析 16 进制颜色代码
+            BaseComponent[] lineComponents = parseLegacyTextWithHexColors(translated);
+            for (BaseComponent component : lineComponents) {
+                builder.append(component);
+            }
         }
         
         return builder.create();
