@@ -474,8 +474,9 @@ public class Shan extends JavaPlugin implements Listener {
         int amount = item.getAmount();
         
         // 返回格式: &7[&7(物品颜色)物品 &f&xe数量&7]
-        // 例如: &7[&b箱子 &f&xe30&7]
-        return "&7[" + itemColor + itemName + " &f&xe" + amount + "&7]";
+        // 注意：不使用 16 进制颜色代码，因为 translateAlternateColorCodes 不支持
+        // 使用普通颜色代码即可，例如: &7[&b箱子 &fx64&7]
+        return "&7[" + itemColor + itemName + " &fx" + amount + "&7]";
     }
     
     /**
@@ -1056,17 +1057,6 @@ public class Shan extends JavaPlugin implements Listener {
         // 构建完整的消息
         String result = format;
         
-        // 处理 [item] 占位符（如果启用）
-        if (displayItemEnabled && message.contains("[item]")) {
-            String itemDisplay = getHandItemDisplay(player);
-            if (itemDisplay != null) {
-                message = message.replace("[item]", itemDisplay);
-            } else {
-                // 如果手里没有物品，移除 [item]
-                message = message.replace("[item]", "");
-            }
-        }
-        
         // 只使用玩家当前穿戴的称号（不穿戴则不显示）
         String title = getPlayerCurrentTitle(player);
         
@@ -1139,6 +1129,19 @@ public class Shan extends JavaPlugin implements Listener {
         
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
+        
+        // 处理 [item] 占位符（在颜色转换之后处理，避免物品显示中的 16 进制颜色被破坏）
+        if (displayItemEnabled && result.contains("[item]")) {
+            String itemDisplay = getHandItemDisplay(player);
+            if (itemDisplay != null) {
+                // 转换物品显示中的颜色代码
+                String convertedItemDisplay = ChatColor.translateAlternateColorCodes('&', itemDisplay);
+                result = result.replace("[item]", convertedItemDisplay);
+            } else {
+                // 如果手里没有物品，移除 [item]
+                result = result.replace("[item]", "");
+            }
+        }
         
         if (needHover || needTitleHover) {
             return buildComponentWithHover(result, player, playerColor, playerColorGradient, title, titleId, needTitleHover);
