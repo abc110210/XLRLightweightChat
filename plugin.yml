@@ -23,6 +23,6 @@ permissions:
   xlr.chat.default:
     description: 默认聊天格式权限
     default: true
-  xlr.chat.playertitle.*:
+  xlr.playertitle.*:
     description: 所有称号权限（通配符）
     default: false

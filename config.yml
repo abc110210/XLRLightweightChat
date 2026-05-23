@@ -14,7 +14,7 @@ Variable:
   color3: "#00c6fb-#005bea"
 
 # 最多拥有 56 个称号，最少 1 个
-# 优先级从上往下开始检查，权限节点是 xlr.chat.名称
+# 优先级从上往下开始检查，权限节点是 xlr.playertitle.ID
 # 前缀格式 ID: "前缀"，ID只能由数字排序，不能重复
 # 称号支持 %olor1% %color2% %color3% 16进制颜色变量
 PlayerTitle:
