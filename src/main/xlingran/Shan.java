@@ -424,6 +424,51 @@ public class Shan extends JavaPlugin implements Listener {
     }
 
     /**
+     * 从文本中提取最后一个颜色代码
+     * @param text 包含颜色代码的文本
+     * @return 最后一个颜色代码，如果没有则返回 null
+     */
+    private net.md_5.bungee.api.ChatColor extractLastColorCode(String text) {
+        // 从后往前查找颜色代码
+        for (int i = text.length() - 1; i >= 0; i--) {
+            char c = text.charAt(i);
+            
+            // 检查 § 格式的颜色代码
+            if (c == '§' && i > 0) {
+                char next = text.charAt(i - 1);
+                // 16 进制颜色代码格式: §x§R§R§G§G§B§B
+                if (next == 'x' && i >= 13) {
+                    // 提取 16 进制颜色
+                    try {
+                        StringBuilder hex = new StringBuilder("#");
+                        for (int j = 0; j < 6; j++) {
+                            hex.append(text.charAt(i - 2 - j * 2));
+                        }
+                        String hexColor = hex.reverse().toString();
+                        return net.md_5.bungee.api.ChatColor.of(hexColor);
+                    } catch (Exception e) {
+                        // 解析失败，继续查找
+                    }
+                }
+                // 传统颜色代码: §a, §b, §c 等
+                else if (Character.isLetterOrDigit(next)) {
+                    return net.md_5.bungee.api.ChatColor.getByChar(next);
+                }
+            }
+            
+            // 检查 & 格式的颜色代码
+            if (c == '&' && i > 0) {
+                char prev = text.charAt(i - 1);
+                if (Character.isLetterOrDigit(prev)) {
+                    return net.md_5.bungee.api.ChatColor.getByChar(prev);
+                }
+            }
+        }
+        
+        return null;
+    }
+
+    /**
      * 构建带悬浮提示的组件
      */
     private BaseComponent[] buildComponentWithHover(String message, Player player) {
@@ -441,8 +486,8 @@ public class Shan extends JavaPlugin implements Listener {
         
         ComponentBuilder builder = new ComponentBuilder();
         
-        // 用于保存前面的最后一个颜色，以便应用到玩家名称上
-        net.md_5.bungee.api.ChatColor lastColor = null;
+        // 用于保存前面文本中最后一个颜色代码，以便应用到玩家名称上
+        net.md_5.bungee.api.ChatColor playerColor = null;
         
         // 添加 %player% 前面的文本（需要正确解析 16 进制颜色代码）
         if (!beforePlayer.isEmpty()) {
@@ -451,20 +496,24 @@ public class Shan extends JavaPlugin implements Listener {
             getLogger().info("[调试] beforePlayer 文本: " + beforePlayer);
             for (BaseComponent component : frontComponents) {
                 builder.append(component);
-                // 记录最后一个组件的颜色
+                // 记录最后一个组件的颜色（但我们需要的是颜色代码，不是组件颜色）
                 if (component instanceof TextComponent textComp && textComp.getColor() != null) {
-                    lastColor = textComp.getColor();
-                    getLogger().info("[调试] 记录颜色: " + lastColor.getName() + " 文本: " + textComp.getText());
+                    getLogger().info("[调试] 记录颜色: " + textComp.getColor().getName() + " 文本: " + textComp.getText());
                 }
             }
+            
+            // 从 beforePlayer 中提取最后一个颜色代码
+            playerColor = extractLastColorCode(beforePlayer);
+            getLogger().info("[调试] 提取到的颜色代码: " + (playerColor != null ? playerColor.getName() : "null"));
         }
         
         // 创建玩家名称组件（带悬浮提示和点击事件）
         TextComponent playerComponent = new TextComponent(player.getName());
         
-        // 继承前面的颜色（如果有的话）
-        if (lastColor != null) {
-            playerComponent.setColor(lastColor);
+        // 应用提取到的颜色（优先使用配置中的颜色代码）
+        if (playerColor != null) {
+            playerComponent.setColor(playerColor);
+            getLogger().info("[调试] 玩家名称应用颜色: " + playerColor.getName());
         }
         
         // 设置悬浮提示
@@ -473,41 +522,60 @@ public class Shan extends JavaPlugin implements Listener {
             playerComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, hoverComponents));
         }
         
-        // 设置点击事件（合并 Command 和 RunCommand）
-        List<String> allCommands = new ArrayList<>();
-        
-        // 添加所有 RunCommand（直接执行）
-        for (String cmd : playerRunCommands) {
-            String command = cmd.replace("%player%", player.getName());
-            if (!command.startsWith("/")) {
-                command = "/" + command;
-            }
-            allCommands.add(command);
-        }
-        
-        // 添加所有 Command（预填）
-        for (String cmd : playerSuggestCommands) {
-            String command = cmd.replace("%player%", player.getName());
-            if (!command.startsWith("/")) {
-                command = "/" + command;
-            }
-            allCommands.add(command);
-        }
-        
-        if (!allCommands.isEmpty()) {
-            // 使用 RUN_COMMAND 执行所有命令（用 ; 分隔）
+        // 设置点击事件（只支持一种类型：Command 或 RunCommand）
+        // 优先使用 Command（预填），如果没有 Command 才使用 RunCommand（执行）
+        if (!playerSuggestCommands.isEmpty() && !playerRunCommands.isEmpty()) {
+            // 如果同时配置了两种，输出警告并使用 Command
+            getLogger().warning("[警告] 同时配置了 Command 和 RunCommand，只使用 Command（预填）");
+            getLogger().warning("[提示] 请只保留其中一种配置");
+            
+            // 使用 SUGGEST_COMMAND（预填命令到聊天栏）
             StringBuilder commandBuilder = new StringBuilder();
-            for (int i = 0; i < allCommands.size(); i++) {
-                commandBuilder.append(allCommands.get(i));
-                if (i < allCommands.size() - 1) {
+            for (int i = 0; i < playerSuggestCommands.size(); i++) {
+                String command = playerSuggestCommands.get(i).replace("%player%", player.getName());
+                if (!command.startsWith("/")) {
+                    command = "/" + command;
+                }
+                commandBuilder.append(command);
+                if (i < playerSuggestCommands.size() - 1) {
+                    commandBuilder.append("; ");
+                }
+            }
+            String finalCommand = commandBuilder.toString();
+            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, finalCommand));
+            getLogger().info("[调试] 设置 SUGGEST_COMMAND 点击事件（预填）: " + finalCommand);
+        } else if (!playerSuggestCommands.isEmpty()) {
+            // 只有 Command，使用 SUGGEST_COMMAND（预填命令到聊天栏）
+            StringBuilder commandBuilder = new StringBuilder();
+            for (int i = 0; i < playerSuggestCommands.size(); i++) {
+                String command = playerSuggestCommands.get(i).replace("%player%", player.getName());
+                if (!command.startsWith("/")) {
+                    command = "/" + command;
+                }
+                commandBuilder.append(command);
+                if (i < playerSuggestCommands.size() - 1) {
+                    commandBuilder.append("; ");
+                }
+            }
+            String finalCommand = commandBuilder.toString();
+            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, finalCommand));
+            getLogger().info("[调试] 设置 SUGGEST_COMMAND 点击事件（预填）: " + finalCommand);
+        } else if (!playerRunCommands.isEmpty()) {
+            // 只有 RunCommand，使用 RUN_COMMAND（直接执行命令）
+            StringBuilder commandBuilder = new StringBuilder();
+            for (int i = 0; i < playerRunCommands.size(); i++) {
+                String command = playerRunCommands.get(i).replace("%player%", player.getName());
+                if (!command.startsWith("/")) {
+                    command = "/" + command;
+                }
+                commandBuilder.append(command);
+                if (i < playerRunCommands.size() - 1) {
                     commandBuilder.append("; ");
                 }
             }
             String finalCommand = commandBuilder.toString();
             playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, finalCommand));
-            // 调试信息：输出设置的点击事件
-            getLogger().info("[调试] 设置 RUN_COMMAND 点击事件: " + finalCommand);
-            getLogger().info("[调试] 包含 " + playerRunCommands.size() + " 个 RunCommand 和 " + playerSuggestCommands.size() + " 个 Command");
+            getLogger().info("[调试] 设置 RUN_COMMAND 点击事件（执行）: " + finalCommand);
         } else {
             getLogger().info("[调试] 未设置点击事件");
         }
