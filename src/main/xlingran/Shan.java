@@ -221,6 +221,7 @@ public class Shan extends JavaPlugin implements Listener {
         
         if (config.contains("player")) {
             List<String> playerConfig = config.getStringList("player");
+            getLogger().info("[调试] 加载 player 配置，共 " + playerConfig.size() + " 行");
             
             for (String line : playerConfig) {
                 if (line.startsWith("Command:")) {
@@ -228,18 +229,27 @@ public class Shan extends JavaPlugin implements Listener {
                     String command = line.substring(8).trim(); // 移除 "Command:" 前缀
                     if (!command.isEmpty()) {
                         playerSuggestCommands.add(command);
+                        getLogger().info("[调试] 添加 Command: " + command);
                     }
                 } else if (line.startsWith("RunCommand:")) {
                     // 这是直接执行命令配置
                     String command = line.substring(11).trim(); // 移除 "RunCommand:" 前缀
                     if (!command.isEmpty()) {
                         playerRunCommands.add(command);
+                        getLogger().info("[调试] 添加 RunCommand: " + command);
                     }
                 } else {
                     // 这是悬浮提示文本
                     playerHoverLore.add(line);
+                    getLogger().info("[调试] 添加悬浮文本: " + line);
                 }
             }
+            
+            getLogger().info("[调试] 配置加载完成 - 悬浮文本: " + playerHoverLore.size() + 
+                           ", Command: " + playerSuggestCommands.size() + 
+                           ", RunCommand: " + playerRunCommands.size());
+        } else {
+            getLogger().info("[调试] 未找到 player 配置");
         }
     }
 
@@ -434,27 +444,43 @@ public class Shan extends JavaPlugin implements Listener {
         // 设置点击事件（预填命令或直接执行）
         // 优先使用 RunCommand（直接执行），其次使用 Command（预填）
         if (!playerRunCommands.isEmpty()) {
-            // 直接执行多条命令（使用 && 分隔）
+            // 直接执行多条命令（使用 ; 分隔）
             StringBuilder commandBuilder = new StringBuilder();
             for (int i = 0; i < playerRunCommands.size(); i++) {
                 String command = playerRunCommands.get(i).replace("%player%", player.getName());
-                commandBuilder.append("/").append(command);
+                // 确保命令以 / 开头
+                if (!command.startsWith("/")) {
+                    command = "/" + command;
+                }
+                commandBuilder.append(command);
                 if (i < playerRunCommands.size() - 1) {
-                    commandBuilder.append(" && ");
+                    commandBuilder.append("; ");
                 }
             }
-            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, commandBuilder.toString()));
+            String finalCommand = commandBuilder.toString();
+            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, finalCommand));
+            // 调试信息：输出设置的点击事件
+            getLogger().info("[调试] 设置 RUN_COMMAND 点击事件: " + finalCommand);
         } else if (!playerSuggestCommands.isEmpty()) {
-            // 预填多条命令（使用 && 分隔）
+            // 预填多条命令（使用 ; 分隔）
             StringBuilder commandBuilder = new StringBuilder();
             for (int i = 0; i < playerSuggestCommands.size(); i++) {
                 String command = playerSuggestCommands.get(i).replace("%player%", player.getName());
-                commandBuilder.append("/").append(command);
+                // 确保命令以 / 开头
+                if (!command.startsWith("/")) {
+                    command = "/" + command;
+                }
+                commandBuilder.append(command);
                 if (i < playerSuggestCommands.size() - 1) {
-                    commandBuilder.append(" && ");
+                    commandBuilder.append("; ");
                 }
             }
-            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, commandBuilder.toString()));
+            String finalCommand = commandBuilder.toString();
+            playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, finalCommand));
+            // 调试信息：输出设置的点击事件
+            getLogger().info("[调试] 设置 SUGGEST_COMMAND 点击事件: " + finalCommand);
+        } else {
+            getLogger().info("[调试] 未设置点击事件，playerRunCommands 和 playerSuggestCommands 都为空");
         }
         
         // 添加玩家名称
