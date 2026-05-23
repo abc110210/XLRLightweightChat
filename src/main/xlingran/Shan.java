@@ -591,22 +591,19 @@ public class Shan extends JavaPlugin implements Listener {
                 // 称号文本已包含渐变颜色代码，需要正确解析
                 BaseComponent[] titleComponents = parseLegacyTextWithHexColors(title);
                 
-                // 使用 ComponentBuilder 合并所有称号组件
-                ComponentBuilder titleBuilder = new ComponentBuilder();
-                for (int i = 0; i < titleComponents.length; i++) {
-                    if (i > 0) {
-                        titleBuilder.append(""); // 添加空字符串作为连接
-                    }
-                    titleBuilder.append(titleComponents[i]);
-                }
-                
-                // 获取合并后的组件
-                BaseComponent[] mergedTitleComponents = titleBuilder.create();
+                // 获取第一个组件作为主组件
                 TextComponent titleComponent;
-                if (mergedTitleComponents.length > 0 && mergedTitleComponents[0] instanceof TextComponent) {
-                    titleComponent = (TextComponent) mergedTitleComponents[0];
+                if (titleComponents.length > 0 && titleComponents[0] instanceof TextComponent) {
+                    titleComponent = (TextComponent) titleComponents[0];
                 } else {
                     titleComponent = new TextComponent(title);
+                }
+                
+                // 如果有多个组件，将剩余的附加到第一个组件的 extra 中
+                if (titleComponents.length > 1) {
+                    for (int i = 1; i < titleComponents.length; i++) {
+                        titleComponent.addExtra(titleComponents[i]);
+                    }
                 }
                 
                 // 获取称号 Lore 并设置为悬浮提示
@@ -646,20 +643,16 @@ public class Shan extends JavaPlugin implements Listener {
             // 将包含渐变颜色的 String 转换为 BaseComponent 数组
             BaseComponent[] gradientComponents = parseLegacyTextWithHexColors(gradientText);
             
-            // 使用 ComponentBuilder 合并所有组件
-            ComponentBuilder playerBuilder = new ComponentBuilder();
-            for (int i = 0; i < gradientComponents.length; i++) {
-                if (i > 0) {
-                    playerBuilder.append(""); // 添加空字符串作为连接
+            // 获取第一个组件作为主组件
+            if (gradientComponents.length > 0 && gradientComponents[0] instanceof TextComponent) {
+                playerComponent = (TextComponent) gradientComponents[0];
+                
+                // 如果有多个组件，将剩余的附加到第一个组件的 extra 中
+                if (gradientComponents.length > 1) {
+                    for (int i = 1; i < gradientComponents.length; i++) {
+                        playerComponent.addExtra(gradientComponents[i]);
+                    }
                 }
-                playerBuilder.append(gradientComponents[i]);
-            }
-            
-            // 获取合并后的组件
-            BaseComponent[] mergedComponents = playerBuilder.create();
-            if (mergedComponents.length > 0 && mergedComponents[0] instanceof TextComponent) {
-                playerComponent = (TextComponent) mergedComponents[0];
-                // 应用渐变颜色到玩家名称
             } else {
                 playerComponent = new TextComponent(player.getName());
             }
