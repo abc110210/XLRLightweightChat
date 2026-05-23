@@ -245,7 +245,7 @@ public class Shan extends JavaPlugin implements Listener {
             }
         }
         
-        getLogger().info("[调试] 称号配置加载完成: " + playerTitles.size() + " 个称号");
+        // 称号配置加载完成
     }
 
     /**
@@ -261,13 +261,13 @@ public class Shan extends JavaPlugin implements Listener {
         chatRunCommands = new ArrayList<>();
         
         if (!config.contains("Required")) {
-            getLogger().info("[调试] 未找到 Required 配置");
+            // 未找到 Required 配置
             return;
         }
         
         ConfigurationSection requiredSection = config.getConfigurationSection("Required");
         if (requiredSection == null) {
-            getLogger().info("[调试] Required 不是配置节");
+            // Required 不是配置节
             return;
         }
         
@@ -287,13 +287,7 @@ public class Shan extends JavaPlugin implements Listener {
             }
         }
         
-        getLogger().info("[调试] Required 配置加载完成");
-        getLogger().info("[调试] player - 悬浮文本: " + playerHoverLore.size() + 
-                       ", Command: " + playerSuggestCommands.size() + 
-                       ", RunCommand: " + playerRunCommands.size());
-        getLogger().info("[调试] chat - 悬浮文本: " + chatHoverLore.size() + 
-                       ", Command: " + chatSuggestCommands.size() + 
-                       ", RunCommand: " + chatRunCommands.size());
+        // Required 配置加载完成
     }
     
     /**
@@ -312,12 +306,12 @@ public class Shan extends JavaPlugin implements Listener {
                     if (key.equalsIgnoreCase("Command")) {
                         if (!value.isEmpty()) {
                             suggestCommands.add(value);
-                            getLogger().info("[调试] [" + configName + "] 添加 Command: " + value);
+                            // 添加 Command
                         }
                     } else if (key.equalsIgnoreCase("RunCommand")) {
                         if (!value.isEmpty()) {
                             runCommands.add(value);
-                            getLogger().info("[调试] [" + configName + "] 添加 RunCommand: " + value);
+                            // 添加 RunCommand
                         }
                     }
                 }
@@ -329,17 +323,17 @@ public class Shan extends JavaPlugin implements Listener {
                     String command = line.substring(8).trim();
                     if (!command.isEmpty()) {
                         suggestCommands.add(command);
-                        getLogger().info("[调试] [" + configName + "] 添加 Command: " + command);
+                        // 添加 Command
                     }
                 } else if (line.startsWith("RunCommand:")) {
                     String command = line.substring(11).trim();
                     if (!command.isEmpty()) {
                         runCommands.add(command);
-                        getLogger().info("[调试] [" + configName + "] 添加 RunCommand: " + command);
+                        // 添加 RunCommand
                     }
                 } else {
                     hoverLore.add(line);
-                    getLogger().info("[调试] [" + configName + "] 添加悬浮文本: " + line);
+                    // 添加悬浮文本
                 }
             }
         }
@@ -443,9 +437,30 @@ public class Shan extends JavaPlugin implements Listener {
         // 只使用玩家当前穿戴的称号（不穿戴则不显示）
         String title = getPlayerCurrentTitle(player);
         
+        // 检查是否需要称号悬浮提示
+        boolean needTitleHover = false;
+        int titleId = -1;
+        
         if (title != null) {
             // 处理称号中的颜色变量
             title = processTitleColors(title);
+            
+            // 查找称号 ID
+            for (Map.Entry<Integer, String> entry : playerTitles.entrySet()) {
+                String titlePrefix = entry.getValue();
+                // 处理称号中的颜色变量后再比较
+                String processedPrefix = processTitleColors(titlePrefix);
+                if (processedPrefix.equals(title)) {
+                    titleId = entry.getKey();
+                    // 检查该称号是否有 Lore
+                    List<String> lore = playerTitleLore.get(titleId);
+                    if (lore != null && !lore.isEmpty()) {
+                        needTitleHover = true;
+                    }
+                    break;
+                }
+            }
+            
             result = result.replace("%title%", title);
         } else {
             // 玩家没有穿戴称号，不显示称号
@@ -492,8 +507,8 @@ public class Shan extends JavaPlugin implements Listener {
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
         
-        if (needHover) {
-            return buildComponentWithHover(result, player, playerColor, playerColorGradient);
+        if (needHover || needTitleHover) {
+            return buildComponentWithHover(result, player, playerColor, playerColorGradient, title, titleId, needTitleHover);
         }
         
         // 不需要悬浮提示，直接替换 %player%
@@ -534,10 +549,16 @@ public class Shan extends JavaPlugin implements Listener {
      * @param player 玩家对象
      * @param playerColor 在转换前提取的玩家名称颜色代码（传统颜色）
      * @param playerColorGradient 玩家名称的渐变颜色配置（16进制颜色）
+     * @param title 称号文本（可为 null）
+     * @param titleId 称号 ID（-1 表示无称号）
+     * @param needTitleHover 是否需要称号悬浮提示
      */
     private BaseComponent[] buildComponentWithHover(String message, Player player, 
                                                      net.md_5.bungee.api.ChatColor playerColor,
-                                                     String playerColorGradient) {
+                                                     String playerColorGradient,
+                                                     String title,
+                                                     int titleId,
+                                                     boolean needTitleHover) {
         // 在替换 %player% 之前，先分割消息
         // 使用 split 并限制为 2，确保只分割第一个 %player%
         int playerIndex = message.indexOf("%player%");
@@ -551,6 +572,40 @@ public class Shan extends JavaPlugin implements Listener {
         String afterPlayer = message.substring(playerIndex + 8); // 8 是 "%player%" 的长度
         
         ComponentBuilder builder = new ComponentBuilder();
+        
+        // 处理称号悬浮提示（在 %player% 之前）
+        if (needTitleHover && titleId > 0 && title != null) {
+            // 在 beforePlayer 中查找称号的位置
+            int titleIndex = beforePlayer.indexOf(title);
+            if (titleIndex != -1) {
+                // 添加称号前面的文本
+                String beforeTitle = beforePlayer.substring(0, titleIndex);
+                if (!beforeTitle.isEmpty()) {
+                    BaseComponent[] beforeComponents = parseLegacyTextWithHexColors(beforeTitle);
+                    for (BaseComponent component : beforeComponents) {
+                        builder.append(component);
+                    }
+                }
+                
+                // 创建称号组件（带悬浮提示）
+                TextComponent titleComponent = new TextComponent(title);
+                
+                // 获取称号 Lore 并设置为悬浮提示
+                List<String> titleLore = playerTitleLore.get(titleId);
+                if (titleLore != null && !titleLore.isEmpty()) {
+                    BaseComponent[] titleHoverComponents = buildHoverComponents(titleLore);
+                    if (titleHoverComponents != null && titleHoverComponents.length > 0) {
+                        titleComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, titleHoverComponents));
+                    }
+                }
+                
+                // 添加称号组件
+                builder.append(titleComponent);
+                
+                // 更新 beforePlayer，移除已处理的部分（称号 + 称号前的文本）
+                beforePlayer = beforePlayer.substring(titleIndex + title.length());
+            }
+        }
         
         // 添加 %player% 前面的文本（需要正确解析 16 进制颜色代码）
         if (!beforePlayer.isEmpty()) {
@@ -569,12 +624,23 @@ public class Shan extends JavaPlugin implements Listener {
             // 应用渐变颜色到玩家名称（返回 String）
             String gradientText = applyGradient(playerColorGradient, player.getName());
             
-            // 将包含渐变颜色的 String 转换为 BaseComponent
+            // 将包含渐变颜色的 String 转换为 BaseComponent 数组
             BaseComponent[] gradientComponents = parseLegacyTextWithHexColors(gradientText);
             
-            if (gradientComponents.length > 0 && gradientComponents[0] instanceof TextComponent) {
-                playerComponent = (TextComponent) gradientComponents[0];
-                getLogger().info("[调试] 玩家名称应用渐变颜色: " + playerColorGradient);
+            // 使用 ComponentBuilder 合并所有组件
+            ComponentBuilder playerBuilder = new ComponentBuilder();
+            for (int i = 0; i < gradientComponents.length; i++) {
+                if (i > 0) {
+                    playerBuilder.append(""); // 添加空字符串作为连接
+                }
+                playerBuilder.append(gradientComponents[i]);
+            }
+            
+            // 获取合并后的组件
+            BaseComponent[] mergedComponents = playerBuilder.create();
+            if (mergedComponents.length > 0 && mergedComponents[0] instanceof TextComponent) {
+                playerComponent = (TextComponent) mergedComponents[0];
+                // 应用渐变颜色到玩家名称
             } else {
                 playerComponent = new TextComponent(player.getName());
             }
@@ -584,7 +650,7 @@ public class Shan extends JavaPlugin implements Listener {
             // 应用提取到的颜色（在转换前提取的 &a 颜色代码）
             if (playerColor != null) {
                 playerComponent.setColor(playerColor);
-                getLogger().info("[调试] 玩家名称应用颜色: " + playerColor.getName());
+                // 应用传统颜色到玩家名称
             }
         }
         
@@ -615,7 +681,6 @@ public class Shan extends JavaPlugin implements Listener {
             }
             String finalCommand = commandBuilder.toString();
             playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, finalCommand));
-            getLogger().info("[调试] 设置 SUGGEST_COMMAND 点击事件（预填）: " + finalCommand);
         } else if (!playerSuggestCommands.isEmpty()) {
             // 只有 Command，使用 SUGGEST_COMMAND（预填命令到聊天栏）
             StringBuilder commandBuilder = new StringBuilder();
@@ -631,7 +696,6 @@ public class Shan extends JavaPlugin implements Listener {
             }
             String finalCommand = commandBuilder.toString();
             playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, finalCommand));
-            getLogger().info("[调试] 设置 SUGGEST_COMMAND 点击事件（预填）: " + finalCommand);
         } else if (!playerRunCommands.isEmpty()) {
             // 只有 RunCommand，使用 RUN_COMMAND（直接执行命令）
             StringBuilder commandBuilder = new StringBuilder();
@@ -647,9 +711,8 @@ public class Shan extends JavaPlugin implements Listener {
             }
             String finalCommand = commandBuilder.toString();
             playerComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, finalCommand));
-            getLogger().info("[调试] 设置 RUN_COMMAND 点击事件（执行）: " + finalCommand);
         } else {
-            getLogger().info("[调试] 未设置 player 点击事件");
+            // 未设置点击事件
         }
         
         // 添加玩家名称
@@ -958,7 +1021,7 @@ public class Shan extends JavaPlugin implements Listener {
      */
     private BaseComponent[] parseLegacyTextWithHexColors(String text) {
         List<BaseComponent> components = new ArrayList<>();
-        TextComponent currentComponent = new TextComponent();
+        TextComponent currentComponent = new TextComponent("");
         
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
@@ -981,7 +1044,7 @@ public class Shan extends JavaPlugin implements Listener {
                         }
                         
                         // 创建新组件并设置 16 进制颜色
-                        currentComponent = new TextComponent();
+                        currentComponent = new TextComponent("");
                         // 使用 BungeeCord ChatColor 的 of 方法设置 16 进制颜色
                         String hexColor = String.format("#%02x%02x%02x", r, g, b);
                         currentComponent.setColor(net.md_5.bungee.api.ChatColor.of(hexColor));
@@ -1001,7 +1064,7 @@ public class Shan extends JavaPlugin implements Listener {
                     }
                     
                     // 创建新组件并设置传统颜色
-                    currentComponent = new TextComponent();
+                    currentComponent = new TextComponent("");
                     // 使用 BungeeCord 的 ChatColor 解析传统颜色代码
                     net.md_5.bungee.api.ChatColor bungeeColor = net.md_5.bungee.api.ChatColor.getByChar(next);
                     if (bungeeColor != null) {
