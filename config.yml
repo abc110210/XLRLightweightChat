@@ -28,10 +28,10 @@ player:
   # 悬浮字体显示
   - ""
   - "&a> 点我私聊"
-  # Command 点击会在聊天栏预设指令
+  # Command 点击会在聊天栏预填指令
   # RunCommand 点击后会直接执行指令
+  # 只能执行一条指令
   - Command: msg %player%
-  - RunCommand: tpa %player%
 
 # 输入命令，命令输出提示
 Command:
