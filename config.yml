@@ -28,6 +28,7 @@ PlayerTitle:
     name: "%color3%[SVIP]"
     Lore:
       - "%color4%高级贵族称号"
+      - "&cVip玩家专属称号"
   3:
     name: "&b[居民]"
     Lore:
