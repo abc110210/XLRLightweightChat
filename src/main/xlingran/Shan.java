@@ -388,9 +388,13 @@ public class Shan extends JavaPlugin implements Listener {
         
         ComponentBuilder builder = new ComponentBuilder();
         
-        // 添加前面的文本
+        // 添加前面的文本（需要正确解析 16 进制颜色代码）
         if (parts.length > 0 && !parts[0].isEmpty()) {
-            builder.append(parts[0]);
+            // 将包含 § 格式的字符串转换为 BaseComponent
+            BaseComponent[] frontComponents = TextComponent.fromLegacyText(parts[0]);
+            for (BaseComponent component : frontComponents) {
+                builder.append(component);
+            }
         }
         
         // 创建玩家名称组件（带悬浮提示和点击事件）
@@ -417,9 +421,13 @@ public class Shan extends JavaPlugin implements Listener {
         // 添加玩家名称
         builder.append(playerComponent);
         
-        // 添加后面的文本
+        // 添加后面的文本（需要正确解析 16 进制颜色代码）
         if (parts.length > 1 && !parts[1].isEmpty()) {
-            builder.append(parts[1]);
+            // 将包含 § 格式的字符串转换为 BaseComponent
+            BaseComponent[] backComponents = TextComponent.fromLegacyText(parts[1]);
+            for (BaseComponent component : backComponents) {
+                builder.append(component);
+            }
         }
         
         return builder.create();
