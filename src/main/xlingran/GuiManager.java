@@ -105,7 +105,7 @@ public class GuiManager implements Listener {
         for (Map.Entry<Integer, String> entry : allTitles.entrySet()) {
             int id = entry.getKey();
             String prefix = entry.getValue();
-            String permission = "xlr.chat.playertitle." + id;
+            String permission = "xlr.playertitle." + id;
 
             if (player.hasPermission(permission)) {
                 titles.add(new TitleInfo(id, prefix));
