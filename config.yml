@@ -22,3 +22,29 @@ PlayerTitle:
   2: "%color3%[SVIP]" #  后续检查权限
   3: "&b[居民]"
   # 4-56: 可以继续添加更多称号...
+
+# 输入命令，命令输出提示
+Command:
+  # 输入/xlrchat reload 后提示
+  reload:
+    - "&7配置已重新加载"
+    - "&7已加载 &6%chat_format% &7个聊天格式"
+    - "&7已加载 &6%color_config% &7个变量颜色配置"
+  help:
+    - "&6===== [XLRightweightChat] ====="
+    - "&7- /xlrchat cp &6打开称号仓库"
+    - "&7- /xlrchat reload &6重载该插件"
+
+# 消息提示
+Message:
+  # 没有权限时输出提示
+  NoPermission: "&c你没有权限执行此命令"
+  # 输入未知子命令时输出提示
+  UnknownSubCmd: "&c未知的子命令"
+  # 命令不是由玩家执行时
+  NoPlayer: "&c此命令只能由玩家执行!"
+
+# 控制台错误警告
+Cmd:
+  playerDataNo: "无法保存玩家数据!"
+  playerUUIDNo: "无效的玩家UUID: %uuid%"

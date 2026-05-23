@@ -17,6 +17,7 @@ Page1:
       - "&3● &7当前穿戴"
   # 下一页
   Next:
+    material: "WHITE_STAINED_GLASS_PANE"
     name: "&f下一页"
     Lore:
       - ""
@@ -25,6 +26,7 @@ Page1:
 Page2:
   name: "&6称号仓库 第 2 页"
   Back:
+    material: "RED_STAINED_GLASS_PANE"
     name: "&f上一页"
     Lore:
       - ""
@@ -33,6 +35,6 @@ Page2:
 # 消息
 Message:
   # 重复点击已穿戴称号时显示
-  Equipped: "&a[&c寄寄之家&a] &7你当前已穿戴该称号!"
+  Equipped: "&a[&c寄寄之家&a] &7已取消穿戴称号"
   # 玩家穿戴成功时显示
-  EquipDone: "&a[&e寄寄之家&a] &7成功穿戴称号: %ChatPrefix%"
+  EquipDone: "&a[&e寄寄之家&a] &7成功穿戴称号: %title%"
