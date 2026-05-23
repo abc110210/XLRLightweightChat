@@ -798,6 +798,13 @@ public class Shan extends JavaPlugin implements Listener {
     public Map<Integer, List<String>> getPlayerTitleLore() {
         return playerTitleLore;
     }
+    
+    /**
+     * 获取颜色变量配置（公共方法，供GuiManager使用）
+     */
+    public Map<String, String> getColorVariables() {
+        return colorVariables;
+    }
 
     /**
      * 获取Gui配置
@@ -836,12 +843,17 @@ public class Shan extends JavaPlugin implements Listener {
                 String gradientConfig = entry.getValue();
                 String placeholder = entry.getKey();
                 
-                // 对称号文本应用渐变
-                if (result.contains(placeholder)) {
-                    // 简单替换：移除占位符，后续由 ChatColor.translateAlternateColorCodes 处理
-                    result = result.replace(placeholder, "");
-                    // 应用渐变到整个称号
-                    result = applyGradient(gradientConfig, result);
+                // 提取占位符后面的称号文本
+                int placeholderIndex = result.indexOf(placeholder);
+                if (placeholderIndex != -1) {
+                    String afterPlaceholder = result.substring(placeholderIndex + placeholder.length());
+                    String beforePlaceholder = result.substring(0, placeholderIndex);
+                    
+                    // 对称号文本应用渐变
+                    String gradientText = applyGradient(gradientConfig, afterPlaceholder);
+                    
+                    // 重新组合：前置文本 + 渐变后的称号
+                    result = beforePlaceholder + gradientText;
                 }
             }
         }
@@ -976,6 +988,16 @@ public class Shan extends JavaPlugin implements Listener {
         }
         
         return result.toString();
+    }
+    
+    /**
+     * 应用渐变颜色到文本（公共方法，供GuiManager使用）
+     * @param gradientConfig 颜色配置，格式: "#RRGGBB-#RRGGBB-#RRGGBB..."
+     * @param text 要应用渐变的文本
+     * @return 应用渐变后的文本
+     */
+    public String applyGradientForGui(String gradientConfig, String text) {
+        return applyGradient(gradientConfig, text);
     }
 
     /**

@@ -187,9 +187,31 @@ public class GuiManager implements Listener {
                     // 获取称号描述
                     List<String> titleLore = plugin.getPlayerTitleLore().get(titleInfo.id());
                     if (titleLore != null && !titleLore.isEmpty()) {
-                        // 插入所有描述行
+                        // 插入所有描述行，并处理颜色变量
                         for (String loreLine : titleLore) {
-                            lore.add(ChatColor.translateAlternateColorCodes('&', loreLine));
+                            // 先处理颜色变量（如 %color4%）
+                            String processedLore = loreLine;
+                            for (Map.Entry<String, String> entry : plugin.getColorVariables().entrySet()) {
+                                if (processedLore.contains(entry.getKey())) {
+                                    String gradientConfig = entry.getValue();
+                                    String placeholder = entry.getKey();
+                                    
+                                    // 提取占位符后面的文本
+                                    int placeholderIndex = processedLore.indexOf(placeholder);
+                                    if (placeholderIndex != -1) {
+                                        String afterPlaceholder = processedLore.substring(placeholderIndex + placeholder.length());
+                                        String beforePlaceholder = processedLore.substring(0, placeholderIndex);
+                                        
+                                        // 对文本应用渐变
+                                        String gradientText = plugin.applyGradientForGui(gradientConfig, afterPlaceholder);
+                                        
+                                        // 重新组合
+                                        processedLore = beforePlaceholder + gradientText;
+                                    }
+                                }
+                            }
+                            // 转换传统颜色代码
+                            lore.add(ChatColor.translateAlternateColorCodes('&', processedLore));
                         }
                     }
                     // 如果 Lore 为空，则 %Lore% 不插入任何内容
