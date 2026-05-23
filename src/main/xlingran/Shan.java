@@ -1223,9 +1223,7 @@ public class Shan extends JavaPlugin implements Listener {
                 }
                 
                 // /xlrchat help - 显示帮助
-                case "help" -> {
-                    sendHelpMessage(player);
-                }
+                case "help" -> sendHelpMessage(player);
                 
                 // 未知子命令
                 default -> {
