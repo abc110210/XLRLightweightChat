@@ -3,8 +3,8 @@
 # 聊天格式顺序 [前缀] [称号] [玩家名称] : [16进制颜色] [聊天内容]
 # 可多个聊天格式，格式名称可自定义
 Chat:
-  op: "&a%title% &a%player%: %color1%%chat%" # 优先检查权限
-  default: "&a%title% &a%player%: %color3%%chat%" # 后续检查权限
+  op: "%title% &a%player%: %color1%%chat%" # 优先检查权限
+  default: "%title% &a%player%: %color3%%chat%" # 后续检查权限
 
 # 16进制渐变颜色变量配置，可以创建多个
 # 可以在上面使用变量是 %color1% %color2%
@@ -22,6 +22,16 @@ PlayerTitle:
   2: "%color3%[SVIP]" #  后续检查权限
   3: "&b[居民]"
   # 4-56: 可以继续添加更多称号...
+
+# %player% 变量，玩家鼠标挪到到这个变量时的悬浮显示
+player:
+  # 悬浮字体显示
+  - ""
+  - "&a> 点我私聊"
+  # Command 点击会在聊天栏预设指令
+  # RunCommand 点击后会直接执行指令
+  - Command: msg %player%
+  - RunCommand: tpa %player%
 
 # 输入命令，命令输出提示
 Command:
@@ -48,12 +58,3 @@ Message:
 Cmd:
   playerDataNo: "无法保存玩家数据!"
   playerUUIDNo: "无效的玩家UUID: %uuid%"
-
-# %player% 变量，相当于玩家鼠标挪到这个变量的时候
-player:
-  # 悬浮字体显示
-  - ""
-  - "&a> 点我私聊"
-  # 点击悬浮字体后直接打开聊天栏补全指令
-  - Command: msg %player%
-  - RunCommand: tpa %player%
