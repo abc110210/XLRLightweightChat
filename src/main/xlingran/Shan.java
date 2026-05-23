@@ -391,7 +391,7 @@ public class Shan extends JavaPlugin implements Listener {
         // 添加前面的文本（需要正确解析 16 进制颜色代码）
         if (parts.length > 0 && !parts[0].isEmpty()) {
             // 将包含 § 格式的字符串转换为 BaseComponent
-            BaseComponent[] frontComponents = TextComponent.fromLegacyText(parts[0]);
+            BaseComponent[] frontComponents = parseLegacyTextWithHexColors(parts[0]);
             for (BaseComponent component : frontComponents) {
                 builder.append(component);
             }
@@ -424,7 +424,7 @@ public class Shan extends JavaPlugin implements Listener {
         // 添加后面的文本（需要正确解析 16 进制颜色代码）
         if (parts.length > 1 && !parts[1].isEmpty()) {
             // 将包含 § 格式的字符串转换为 BaseComponent
-            BaseComponent[] backComponents = TextComponent.fromLegacyText(parts[1]);
+            BaseComponent[] backComponents = parseLegacyTextWithHexColors(parts[1]);
             for (BaseComponent component : backComponents) {
                 builder.append(component);
             }
@@ -628,6 +628,79 @@ public class Shan extends JavaPlugin implements Listener {
         }
         
         return builder.create();
+    }
+
+    /**
+     * 解析包含 16 进制颜色代码的文本为 BaseComponent 数组
+     * 支持 §x§R§R§G§G§B§B 格式的 16 进制颜色和传统颜色代码
+     */
+    private BaseComponent[] parseLegacyTextWithHexColors(String text) {
+        List<BaseComponent> components = new ArrayList<>();
+        TextComponent currentComponent = new TextComponent();
+        
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            
+            // 处理 § 格式
+            if (c == '§' && i + 1 < text.length()) {
+                char next = text.charAt(i + 1);
+                
+                // 检查是否是 16 进制颜色代码 §x§R§R§G§G§B§B
+                if (next == 'x' && i + 13 < text.length()) {
+                    // 解析 16 进制颜色
+                    try {
+                        int r = (Character.digit(text.charAt(i + 3), 16) << 4) | Character.digit(text.charAt(i + 5), 16);
+                        int g = (Character.digit(text.charAt(i + 7), 16) << 4) | Character.digit(text.charAt(i + 9), 16);
+                        int b = (Character.digit(text.charAt(i + 11), 16) << 4) | Character.digit(text.charAt(i + 13), 16);
+                        
+                        // 添加当前组件
+                        if (!currentComponent.getText().isEmpty()) {
+                            components.add(currentComponent);
+                        }
+                        
+                        // 创建新组件并设置 16 进制颜色
+                        currentComponent = new TextComponent();
+                        // 使用 BungeeCord ChatColor 的 of 方法设置 16 进制颜色
+                        String hexColor = String.format("#%02x%02x%02x", r, g, b);
+                        currentComponent.setColor(net.md_5.bungee.api.ChatColor.of(hexColor));
+                        
+                        // 跳过颜色代码
+                        i += 13;
+                        continue;
+                    } catch (Exception e) {
+                        // 如果解析失败，当作普通字符处理
+                    }
+                }
+                // 传统颜色代码处理
+                else if (Character.isLetterOrDigit(next)) {
+                    // 添加当前组件
+                    if (!currentComponent.getText().isEmpty()) {
+                        components.add(currentComponent);
+                    }
+                    
+                    // 创建新组件并设置传统颜色
+                    currentComponent = new TextComponent();
+                    // 使用 BungeeCord 的 ChatColor 解析传统颜色代码
+                    net.md_5.bungee.api.ChatColor bungeeColor = net.md_5.bungee.api.ChatColor.getByChar(next);
+                    if (bungeeColor != null) {
+                        currentComponent.setColor(bungeeColor);
+                    }
+                    
+                    i++; // 跳过下一个字符
+                    continue;
+                }
+            }
+            
+            // 普通字符，添加到当前组件
+            currentComponent.setText(currentComponent.getText() + c);
+        }
+        
+        // 添加最后一个组件
+        if (!currentComponent.getText().isEmpty()) {
+            components.add(currentComponent);
+        }
+        
+        return components.toArray(new BaseComponent[0]);
     }
 
     /**
