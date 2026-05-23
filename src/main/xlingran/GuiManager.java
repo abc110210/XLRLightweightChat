@@ -267,7 +267,9 @@ public class GuiManager implements Listener {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+            // 处理物品名称的语言切换
+            String displayName = processItemName(name, material);
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
             item.setItemMeta(meta);
         }
         return item;
@@ -280,7 +282,9 @@ public class GuiManager implements Listener {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+            // 处理物品名称的语言切换
+            String displayName = processItemName(name, material);
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', displayName));
             List<String> translatedLore = new ArrayList<>();
             for (String line : lore) {
                 translatedLore.add(ChatColor.translateAlternateColorCodes('&', line));
@@ -404,6 +408,30 @@ public class GuiManager implements Listener {
         
         // 刷新 GUI
         player.openInventory(createGUI(player, currentPage));
+    }
+
+    /**
+     * 处理物品名称的语言切换
+     * @param name 原始名称（来自配置文件）
+     * @param material 物品材质
+     * @return 处理后的名称
+     */
+    private String processItemName(String name, Material material) {
+        // 如果名称包含颜色代码或不是默认的物品名称格式，直接返回
+        if (name == null || name.contains("&") || name.contains("§")) {
+            return name;
+        }
+        
+        // 获取语言配置
+        String language = plugin.getConfig().getString("DiaplayLanguage", "zh-cn").toLowerCase();
+        
+        // 如果是英文模式，直接返回英文名称
+        if (language.equals("en-us")) {
+            return name;
+        }
+        
+        // 中文模式：将物品材质名称转换为中文
+        return plugin.getItemChineseName(material);
     }
 
     /**

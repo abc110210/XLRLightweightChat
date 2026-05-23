@@ -50,6 +50,7 @@ public class Shan extends JavaPlugin implements Listener {
     
     // 物品展示配置
     private boolean displayItemEnabled = false; // 是否启用 [item] 占位符
+    private String displayItemLanguage = "zh-cn"; // 物品显示语言：zh-cn（中文简体）或 en-us（英文）
 
     @Override
     public void onEnable() {
@@ -194,6 +195,14 @@ public class Shan extends JavaPlugin implements Listener {
      */
     private void loadDisplayItemConfig() {
         displayItemEnabled = config.getBoolean("Displayitem", false);
+        displayItemLanguage = config.getString("DiaplayLanguage", "zh-cn").toLowerCase();
+        
+        // 验证语言配置
+        if (!displayItemLanguage.equals("zh-cn") && !displayItemLanguage.equals("en-us")) {
+            getLogger().warning("[警告] DiaplayLanguage 配置无效: " + displayItemLanguage);
+            getLogger().warning("[提示] 有效值: zh-cn（中文简体）, en-us（英文）");
+            displayItemLanguage = "zh-cn"; // 默认使用中文
+        }
     }
 
     /**
@@ -459,62 +468,465 @@ public class Shan extends JavaPlugin implements Listener {
             return null;
         }
         
-        // 获取物品名称
-        String itemName = getItemChineseName(item.getType());
+        // 获取物品名称和颜色（根据语言配置）
+        String itemName = getItemDisplayName(item.getType());
+        String itemColor = getItemColorCode(item.getType());
         int amount = item.getAmount();
         
-        // 返回格式: [物品 x数量]
-        return "[" + itemName + " x" + amount + "]";
+        // 返回格式: &7[&7(物品颜色)物品 &f&xe数量&7]
+        // 例如: &7[&b箱子 &f&xe30&7]
+        return "&7[" + itemColor + itemName + " &f&xe" + amount + "&7]";
     }
     
     /**
-     * 获取物品的中文名称
+     * 获取物品的颜色代码
+     * @param material 物品类型
+     * @return 颜色代码（& 格式），例如 &b 表示青色
+     */
+    private String getItemColorCode(org.bukkit.Material material) {
+        // 根据物品类型返回对应的颜色
+        return switch (material) {
+            // 矿石类 - 根据颜色分类
+            case COAL_ORE, COAL, CHARCOAL -> "&7"; // 灰色
+            case IRON_ORE, IRON_INGOT, IRON_PICKAXE, IRON_AXE, IRON_SHOVEL, IRON_HOE, IRON_SWORD,
+                 IRON_HELMET, IRON_CHESTPLATE, IRON_LEGGINGS, IRON_BOOTS -> "&f"; // 白色
+            case GOLD_ORE, GOLD_INGOT, GOLDEN_PICKAXE, GOLDEN_AXE, GOLDEN_SHOVEL, GOLDEN_HOE, GOLDEN_SWORD,
+                 GOLDEN_HELMET, GOLDEN_CHESTPLATE, GOLDEN_LEGGINGS, GOLDEN_BOOTS, GOLDEN_APPLE,
+                 ENCHANTED_GOLDEN_APPLE -> "&6"; // 金色
+            case DIAMOND_ORE, DIAMOND, DIAMOND_PICKAXE, DIAMOND_AXE, DIAMOND_SHOVEL, DIAMOND_HOE, DIAMOND_SWORD,
+                 DIAMOND_HELMET, DIAMOND_CHESTPLATE, DIAMOND_LEGGINGS, DIAMOND_BOOTS -> "&b"; // 青色
+            case EMERALD_ORE, EMERALD -> "&a"; // 绿色
+            case LAPIS_ORE, LAPIS_LAZULI -> "&9"; // 蓝色
+            case REDSTONE_ORE, REDSTONE -> "&c"; // 红色
+            
+            // 木材类 - 根据木材颜色
+            case OAK_LOG, OAK_PLANKS, OAK_DOOR, OAK_TRAPDOOR, OAK_SAPLING, OAK_LEAVES -> "&6"; // 橡木色
+            case SPRUCE_LOG, SPRUCE_PLANKS, SPRUCE_SAPLING, SPRUCE_LEAVES -> "&4"; // 深棕色
+            case BIRCH_LOG, BIRCH_PLANKS, BIRCH_SAPLING, BIRCH_LEAVES -> "&f"; // 白色
+            case JUNGLE_LOG, JUNGLE_PLANKS, JUNGLE_SAPLING, JUNGLE_LEAVES -> "&2"; // 深绿色
+            case ACACIA_LOG, ACACIA_PLANKS, ACACIA_SAPLING, ACACIA_LEAVES -> "&c"; // 橙红色
+            case DARK_OAK_LOG, DARK_OAK_PLANKS, DARK_OAK_SAPLING, DARK_OAK_LEAVES -> "&4"; // 深棕色
+            
+            // 方块类
+            case STONE, COBBLESTONE, GRAVEL -> "&8"; // 深灰色
+            case GRANITE -> "&c"; // 粉红色
+            case DIORITE -> "&f"; // 白色
+            case ANDESITE -> "&7"; // 灰色
+            case GRASS_BLOCK, DIRT -> "&2"; // 绿色/棕色
+            case SAND -> "&e"; // 黄色
+            case RED_SAND -> "&6"; // 橙色
+            case GLASS -> "&f"; // 透明/白色
+            case BRICK -> "&c"; // 红色
+            case BOOKSHELF -> "&6"; // 棕色
+            case CHEST -> "&6"; // 棕色
+            case CRAFTING_TABLE -> "&6"; // 棕色
+            case FURNACE -> "&8"; // 灰色
+            case TORCH -> "&e"; // 黄色
+            case LADDER -> "&6"; // 棕色
+            case BEDROCK -> "&8"; // 深灰色
+            case TNT -> "&c"; // 红色
+            
+            // 工具类（按材质分类，已在上面定义）
+            case WOODEN_PICKAXE, WOODEN_AXE, WOODEN_SHOVEL, WOODEN_HOE, WOODEN_SWORD, STICK -> "&6"; // 木色
+            case STONE_PICKAXE, STONE_AXE, STONE_SHOVEL, STONE_HOE, STONE_SWORD -> "&7"; // 石灰色
+            case NETHERITE_PICKAXE, NETHERITE_AXE, NETHERITE_SHOVEL, NETHERITE_HOE, NETHERITE_SWORD,
+                 NETHERITE_HELMET, NETHERITE_CHESTPLATE, NETHERITE_LEGGINGS, NETHERITE_BOOTS -> "&5"; // 紫色
+            
+            // 皮革盔甲
+            case LEATHER_HELMET, LEATHER_CHESTPLATE, LEATHER_LEGGINGS, LEATHER_BOOTS, LEATHER -> "&c"; // 红棕色
+            
+            // 锁链盔甲
+            case CHAINMAIL_HELMET, CHAINMAIL_CHESTPLATE, CHAINMAIL_LEGGINGS, CHAINMAIL_BOOTS -> "&7"; // 灰色
+            
+            // 食物类
+            case APPLE -> "&c"; // 红色
+            case BREAD -> "&e"; // 黄色
+            case COOKED_PORKCHOP, COOKED_BEEF, COOKED_CHICKEN, COOKED_MUTTON, COOKED_RABBIT,
+                 COOKED_COD, COOKED_SALMON -> "&6"; // 棕色
+            case CARROT -> "&6"; // 橙色
+            case POTATO, BAKED_POTATO -> "&e"; // 黄色
+            case BEETROOT -> "&c"; // 红色
+            case MELON_SLICE -> "&a"; // 绿色
+            case PUMPKIN_PIE -> "&e"; // 黄色
+            case COOKIE -> "&e"; // 棕色
+            case CAKE -> "&f"; // 白色
+            
+            // 材料类
+            case STRING, FEATHER, PAPER, BOOK -> "&f"; // 白色
+            case GUNPOWDER, FLINT -> "&8"; // 灰色
+            case BONE -> "&f"; // 白色
+            case SLIME_BALL -> "&a"; // 绿色
+            case EGG -> "&f"; // 白色
+            case GLOWSTONE_DUST -> "&e"; // 黄色
+            case INK_SAC -> "&8"; // 黑色
+            case COCOA_BEANS -> "&6"; // 棕色
+            
+            // 药水类
+            case POTION, SPLASH_POTION, LINGERING_POTION -> "&b"; // 蓝色
+            
+            // 其他
+            case BOW -> "&6"; // 棕色
+            case CROSSBOW -> "&8"; // 深灰色
+            case SHIELD -> "&8"; // 灰色
+            case FISHING_ROD -> "&6"; // 棕色
+            case FLINT_AND_STEEL -> "&7"; // 灰色
+            case SHEARS -> "&7"; // 灰色
+            case COMPASS -> "&f"; // 白色
+            case CLOCK -> "&e"; // 金色
+            case MAP -> "&e"; // 黄色
+            case NAME_TAG -> "&f"; // 白色
+            case LEAD -> "&f"; // 白色
+            case SADDLE -> "&4"; // 深棕色
+            case WATER_BUCKET -> "&9"; // 蓝色
+            case LAVA_BUCKET -> "&c"; // 红色
+            case MILK_BUCKET -> "&f"; // 白色
+            case BUCKET -> "&7"; // 灰色
+            
+            // 默认：返回白色
+            default -> "&f";
+        };
+    }
+    
+    /**
+     * 获取物品的显示名称（根据配置的语言）
+     * @param material 物品类型
+     * @return 物品名称（中文或英文）
+     */
+    private String getItemDisplayName(org.bukkit.Material material) {
+        if (displayItemLanguage.equals("en-us")) {
+            // 英文：返回格式化的英文名称
+            return material.name().replace('_', ' ').toLowerCase();
+        } else {
+            // 中文：返回中文名称
+            return getItemChineseName(material);
+        }
+    }
+    
+    /**
+     * 获取物品的中文名称（公共方法，供GuiManager使用）
      * @param material 物品类型
      * @return 中文名称，如果没有映射则返回英文名称
      */
-    private String getItemChineseName(org.bukkit.Material material) {
+    public String getItemChineseName(org.bukkit.Material material) {
         // 常见物品的中文映射
         return switch (material) {
             // 方块类
             case STONE -> "石头";
             case GRANITE -> "花岗岩";
+            case POLISHED_GRANITE -> "磨制花岗岩";
             case DIORITE -> "闪长岩";
+            case POLISHED_DIORITE -> "磨制闪长岩";
             case ANDESITE -> "安山岩";
+            case POLISHED_ANDESITE -> "磨制安山岩";
             case GRASS_BLOCK -> "草方块";
             case DIRT -> "泥土";
+            case COARSE_DIRT -> "砂土";
+            case PODZOL -> "灰化土";
             case COBBLESTONE -> "圆石";
+            case MOSSY_COBBLESTONE -> "覆苔圆石";
             case OAK_PLANKS -> "橡木木板";
             case SPRUCE_PLANKS -> "云杉木板";
             case BIRCH_PLANKS -> "白桦木板";
             case JUNGLE_PLANKS -> "丛林木板";
             case ACACIA_PLANKS -> "金合欢木板";
             case DARK_OAK_PLANKS -> "深色橡木木板";
+            case CRIMSON_PLANKS -> "绯红木板";
+            case WARPED_PLANKS -> "诡异木板";
             case OAK_LOG -> "橡木原木";
             case SPRUCE_LOG -> "云杉原木";
             case BIRCH_LOG -> "白桦原木";
             case JUNGLE_LOG -> "丛林原木";
             case ACACIA_LOG -> "金合欢原木";
             case DARK_OAK_LOG -> "深色橡木原木";
+            case CRIMSON_STEM -> "绯红木柄";
+            case WARPED_STEM -> "诡异木柄";
+            case STRIPPED_OAK_LOG -> "去皮橡木原木";
+            case STRIPPED_SPRUCE_LOG -> "去皮云杉原木";
+            case STRIPPED_BIRCH_LOG -> "去皮白桦原木";
+            case STRIPPED_JUNGLE_LOG -> "去皮丛林原木";
+            case STRIPPED_ACACIA_LOG -> "去皮金合欢原木";
+            case STRIPPED_DARK_OAK_LOG -> "去皮深色橡木原木";
             case SAND -> "沙子";
             case RED_SAND -> "红沙";
             case GRAVEL -> "砂砾";
             case COAL_ORE -> "煤矿石";
+            case DEEPSLATE_COAL_ORE -> "深层煤矿石";
             case IRON_ORE -> "铁矿石";
+            case DEEPSLATE_IRON_ORE -> "深层铁矿石";
             case GOLD_ORE -> "金矿石";
+            case DEEPSLATE_GOLD_ORE -> "深层金矿石";
             case DIAMOND_ORE -> "钻石矿石";
+            case DEEPSLATE_DIAMOND_ORE -> "深层钻石矿石";
             case EMERALD_ORE -> "绿宝石矿石";
+            case DEEPSLATE_EMERALD_ORE -> "深层绿宝石矿石";
             case LAPIS_ORE -> "青金石矿石";
+            case DEEPSLATE_LAPIS_ORE -> "深层青金石矿石";
             case REDSTONE_ORE -> "红石矿石";
+            case DEEPSLATE_REDSTONE_ORE -> "深层红石矿石";
+            case COPPER_ORE -> "铜矿石";
+            case DEEPSLATE_COPPER_ORE -> "深层铜矿石";
             case GLASS -> "玻璃";
             case BRICK -> "砖块";
             case BOOKSHELF -> "书架";
             case CHEST -> "箱子";
+            case TRAPPED_CHEST -> "陷阱箱";
             case CRAFTING_TABLE -> "工作台";
             case FURNACE -> "熔炉";
+            case BLAST_FURNACE -> "高炉";
+            case SMOKER -> "烟熏炉";
             case TORCH -> "火把";
+            case SOUL_TORCH -> "灵魂火把";
             case LADDER -> "梯子";
             case OAK_DOOR -> "橡木门";
+            case SPRUCE_DOOR -> "云杉门";
+            case BIRCH_DOOR -> "白桦门";
+            case JUNGLE_DOOR -> "丛林门";
+            case ACACIA_DOOR -> "金合欢门";
+            case DARK_OAK_DOOR -> "深色橡木门";
+            case CRIMSON_DOOR -> "绯红木门";
+            case WARPED_DOOR -> "诡异木门";
             case OAK_TRAPDOOR -> "橡木活板门";
+            case SPRUCE_TRAPDOOR -> "云杉活板门";
+            case BIRCH_TRAPDOOR -> "白桦活板门";
+            case JUNGLE_TRAPDOOR -> "丛林活板门";
+            case ACACIA_TRAPDOOR -> "金合欢活板门";
+            case DARK_OAK_TRAPDOOR -> "深色橡木活板门";
+            case CRIMSON_TRAPDOOR -> "绯红木活板门";
+            case WARPED_TRAPDOOR -> "诡异木活板门";
+            case IRON_DOOR -> "铁门";
+            case IRON_TRAPDOOR -> "铁活板门";
+            case STONE_PRESSURE_PLATE -> "石头压力板";
+            case OAK_PRESSURE_PLATE -> "橡木压力板";
+            case SPRUCE_PRESSURE_PLATE -> "云杉压力板";
+            case BIRCH_PRESSURE_PLATE -> "白桦压力板";
+            case JUNGLE_PRESSURE_PLATE -> "丛林压力板";
+            case ACACIA_PRESSURE_PLATE -> "金合欢压力板";
+            case DARK_OAK_PRESSURE_PLATE -> "深色橡木压力板";
+            case CRIMSON_PRESSURE_PLATE -> "绯红木压力板";
+            case WARPED_PRESSURE_PLATE -> "诡异木压力板";
+            case STONE_BUTTON -> "石头按钮";
+            case OAK_BUTTON -> "橡木按钮";
+            case SPRUCE_BUTTON -> "云杉按钮";
+            case BIRCH_BUTTON -> "白桦按钮";
+            case JUNGLE_BUTTON -> "丛林按钮";
+            case ACACIA_BUTTON -> "金合欢按钮";
+            case DARK_OAK_BUTTON -> "深色橡木按钮";
+            case CRIMSON_BUTTON -> "绯红木按钮";
+            case WARPED_BUTTON -> "诡异木按钮";
+            case BEDROCK -> "基岩";
+            case TNT -> "TNT";
+            case OBSIDIAN -> "黑曜石";
+            case CRYING_OBSIDIAN -> "哭泣的黑曜石";
+            case GLOWSTONE -> "荧石";
+            case JACK_O_LANTERN -> "南瓜灯";
+            case CARVED_PUMPKIN -> "雕刻过的南瓜";
+            case PUMPKIN -> "南瓜";
+            case MELON -> "西瓜";
+            case HAY_BLOCK -> "干草块";
+            case WHITE_WOOL -> "白色羊毛";
+            case ORANGE_WOOL -> "橙色羊毛";
+            case MAGENTA_WOOL -> "品红色羊毛";
+            case LIGHT_BLUE_WOOL -> "淡蓝色羊毛";
+            case YELLOW_WOOL -> "黄色羊毛";
+            case LIME_WOOL -> "黄绿色羊毛";
+            case PINK_WOOL -> "粉红色羊毛";
+            case GRAY_WOOL -> "灰色羊毛";
+            case LIGHT_GRAY_WOOL -> "淡灰色羊毛";
+            case CYAN_WOOL -> "青色羊毛";
+            case PURPLE_WOOL -> "紫色羊毛";
+            case BLUE_WOOL -> "蓝色羊毛";
+            case BROWN_WOOL -> "棕色羊毛";
+            case GREEN_WOOL -> "绿色羊毛";
+            case RED_WOOL -> "红色羊毛";
+            case BLACK_WOOL -> "黑色羊毛";
+            case SNOW_BLOCK -> "雪块";
+            case ICE -> "冰";
+            case PACKED_ICE -> "浮冰";
+            case BLUE_ICE -> "蓝冰";
+            case NETHERRACK -> "下界岩";
+            case SOUL_SAND -> "灵魂沙";
+            case SOUL_SOIL -> "灵魂土";
+            case BASALT -> "玄武岩";
+            case BLACKSTONE -> "黑石";
+            case GILDED_BLACKSTONE -> "镶金黑石";
+            case NETHER_QUARTZ_ORE -> "下界石英矿石";
+            case NETHER_GOLD_ORE -> "下界金矿石";
+            case ANCIENT_DEBRIS -> "远古残骸";
+            case END_STONE -> "末地石";
+            case PURPUR_BLOCK -> "紫珀方块";
+            case PRISMARINE -> "海晶石";
+            case PRISMARINE_BRICKS -> "海晶石砖";
+            case DARK_PRISMARINE -> "暗海晶石";
+            case SEA_LANTERN -> "海晶灯";
+            case MAGMA_BLOCK -> "岩浆块";
+            case NETHER_WART_BLOCK -> "下界疣方块";
+            case WARPED_WART_BLOCK -> "诡异疣方块";
+            case SHROOMLIGHT -> "菌光体";
+            case HONEYCOMB_BLOCK -> "蜜脾块";
+            case HONEY_BLOCK -> "蜂蜜块";
+            case SLIME_BLOCK -> "黏液块";
+            case SPONGE -> "海绵";
+            case WET_SPONGE -> "湿海绵";
+            case TERRACOTTA -> "陶瓦";
+            case WHITE_TERRACOTTA -> "白色陶瓦";
+            case ORANGE_TERRACOTTA -> "橙色陶瓦";
+            case MAGENTA_TERRACOTTA -> "品红色陶瓦";
+            case LIGHT_BLUE_TERRACOTTA -> "淡蓝色陶瓦";
+            case YELLOW_TERRACOTTA -> "黄色陶瓦";
+            case LIME_TERRACOTTA -> "黄绿色陶瓦";
+            case PINK_TERRACOTTA -> "粉红色陶瓦";
+            case GRAY_TERRACOTTA -> "灰色陶瓦";
+            case LIGHT_GRAY_TERRACOTTA -> "淡灰色陶瓦";
+            case CYAN_TERRACOTTA -> "青色陶瓦";
+            case PURPLE_TERRACOTTA -> "紫色陶瓦";
+            case BLUE_TERRACOTTA -> "蓝色陶瓦";
+            case BROWN_TERRACOTTA -> "棕色陶瓦";
+            case GREEN_TERRACOTTA -> "绿色陶瓦";
+            case RED_TERRACOTTA -> "红色陶瓦";
+            case BLACK_TERRACOTTA -> "黑色陶瓦";
+            case WHITE_CONCRETE -> "白色混凝土";
+            case ORANGE_CONCRETE -> "橙色混凝土";
+            case MAGENTA_CONCRETE -> "品红色混凝土";
+            case LIGHT_BLUE_CONCRETE -> "淡蓝色混凝土";
+            case YELLOW_CONCRETE -> "黄色混凝土";
+            case LIME_CONCRETE -> "黄绿色混凝土";
+            case PINK_CONCRETE -> "粉红色混凝土";
+            case GRAY_CONCRETE -> "灰色混凝土";
+            case LIGHT_GRAY_CONCRETE -> "淡灰色混凝土";
+            case CYAN_CONCRETE -> "青色混凝土";
+            case PURPLE_CONCRETE -> "紫色混凝土";
+            case BLUE_CONCRETE -> "蓝色混凝土";
+            case BROWN_CONCRETE -> "棕色混凝土";
+            case GREEN_CONCRETE -> "绿色混凝土";
+            case RED_CONCRETE -> "红色混凝土";
+            case BLACK_CONCRETE -> "黑色混凝土";
+            case WHITE_GLAZED_TERRACOTTA -> "白色带釉陶瓦";
+            case ORANGE_GLAZED_TERRACOTTA -> "橙色带釉陶瓦";
+            case MAGENTA_GLAZED_TERRACOTTA -> "品红色带釉陶瓦";
+            case LIGHT_BLUE_GLAZED_TERRACOTTA -> "淡蓝色带釉陶瓦";
+            case YELLOW_GLAZED_TERRACOTTA -> "黄色带釉陶瓦";
+            case LIME_GLAZED_TERRACOTTA -> "黄绿色带釉陶瓦";
+            case PINK_GLAZED_TERRACOTTA -> "粉红色带釉陶瓦";
+            case GRAY_GLAZED_TERRACOTTA -> "灰色带釉陶瓦";
+            case LIGHT_GRAY_GLAZED_TERRACOTTA -> "淡灰色带釉陶瓦";
+            case CYAN_GLAZED_TERRACOTTA -> "青色带釉陶瓦";
+            case PURPLE_GLAZED_TERRACOTTA -> "紫色带釉陶瓦";
+            case BLUE_GLAZED_TERRACOTTA -> "蓝色带釉陶瓦";
+            case BROWN_GLAZED_TERRACOTTA -> "棕色带釉陶瓦";
+            case GREEN_GLAZED_TERRACOTTA -> "绿色带釉陶瓦";
+            case RED_GLAZED_TERRACOTTA -> "红色带釉陶瓦";
+            case BLACK_GLAZED_TERRACOTTA -> "黑色带釉陶瓦";
+            case WHITE_STAINED_GLASS -> "白色染色玻璃";
+            case ORANGE_STAINED_GLASS -> "橙色染色玻璃";
+            case MAGENTA_STAINED_GLASS -> "品红色染色玻璃";
+            case LIGHT_BLUE_STAINED_GLASS -> "淡蓝色染色玻璃";
+            case YELLOW_STAINED_GLASS -> "黄色染色玻璃";
+            case LIME_STAINED_GLASS -> "黄绿色染色玻璃";
+            case PINK_STAINED_GLASS -> "粉红色染色玻璃";
+            case GRAY_STAINED_GLASS -> "灰色染色玻璃";
+            case LIGHT_GRAY_STAINED_GLASS -> "淡灰色染色玻璃";
+            case CYAN_STAINED_GLASS -> "青色染色玻璃";
+            case PURPLE_STAINED_GLASS -> "紫色染色玻璃";
+            case BLUE_STAINED_GLASS -> "蓝色染色玻璃";
+            case BROWN_STAINED_GLASS -> "棕色染色玻璃";
+            case GREEN_STAINED_GLASS -> "绿色染色玻璃";
+            case RED_STAINED_GLASS -> "红色染色玻璃";
+            case BLACK_STAINED_GLASS -> "黑色染色玻璃";
+            
+            // 玻璃板类
+            case WHITE_STAINED_GLASS_PANE -> "白色玻璃板";
+            case ORANGE_STAINED_GLASS_PANE -> "橙色玻璃板";
+            case MAGENTA_STAINED_GLASS_PANE -> "品红色玻璃板";
+            case LIGHT_BLUE_STAINED_GLASS_PANE -> "淡蓝色玻璃板";
+            case YELLOW_STAINED_GLASS_PANE -> "黄色玻璃板";
+            case LIME_STAINED_GLASS_PANE -> "黄绿色玻璃板";
+            case PINK_STAINED_GLASS_PANE -> "粉红色玻璃板";
+            case GRAY_STAINED_GLASS_PANE -> "灰色玻璃板";
+            case LIGHT_GRAY_STAINED_GLASS_PANE -> "淡灰色玻璃板";
+            case CYAN_STAINED_GLASS_PANE -> "青色玻璃板";
+            case PURPLE_STAINED_GLASS_PANE -> "紫色玻璃板";
+            case BLUE_STAINED_GLASS_PANE -> "蓝色玻璃板";
+            case BROWN_STAINED_GLASS_PANE -> "棕色玻璃板";
+            case GREEN_STAINED_GLASS_PANE -> "绿色玻璃板";
+            case RED_STAINED_GLASS_PANE -> "红色玻璃板";
+            case BLACK_STAINED_GLASS_PANE -> "黑色玻璃板";
+            case WHITE_CARPET -> "白色地毯";
+            case ORANGE_CARPET -> "橙色地毯";
+            case MAGENTA_CARPET -> "品红色地毯";
+            case LIGHT_BLUE_CARPET -> "淡蓝色地毯";
+            case YELLOW_CARPET -> "黄色地毯";
+            case LIME_CARPET -> "黄绿色地毯";
+            case PINK_CARPET -> "粉红色地毯";
+            case GRAY_CARPET -> "灰色地毯";
+            case LIGHT_GRAY_CARPET -> "淡灰色地毯";
+            case CYAN_CARPET -> "青色地毯";
+            case PURPLE_CARPET -> "紫色地毯";
+            case BLUE_CARPET -> "蓝色地毯";
+            case BROWN_CARPET -> "棕色地毯";
+            case GREEN_CARPET -> "绿色地毯";
+            case RED_CARPET -> "红色地毯";
+            case BLACK_CARPET -> "黑色地毯";
+            case WHITE_BED -> "白色床";
+            case ORANGE_BED -> "橙色床";
+            case MAGENTA_BED -> "品红色床";
+            case LIGHT_BLUE_BED -> "淡蓝色床";
+            case YELLOW_BED -> "黄色床";
+            case LIME_BED -> "黄绿色床";
+            case PINK_BED -> "粉红色床";
+            case GRAY_BED -> "灰色床";
+            case LIGHT_GRAY_BED -> "淡灰色床";
+            case CYAN_BED -> "青色床";
+            case PURPLE_BED -> "紫色床";
+            case BLUE_BED -> "蓝色床";
+            case BROWN_BED -> "棕色床";
+            case GREEN_BED -> "绿色床";
+            case RED_BED -> "红色床";
+            case BLACK_BED -> "黑色床";
+            case BARREL -> "木桶";
+            case SMITHING_TABLE -> "锻造台";
+            case FLETCHING_TABLE -> "制箭台";
+            case CARTOGRAPHY_TABLE -> "制图台";
+            case LOOM -> "织布机";
+            case COMPOSTER -> "堆肥桶";
+            case BREWING_STAND -> "酿造台";
+            case CAULDRON -> "炼药锅";
+            case GRINDSTONE -> "砂轮";
+            case STONECUTTER -> "切石机";
+            case LECTERN -> "讲台";
+            case ANVIL -> "铁砧";
+            case CHIPPED_ANVIL -> "受损的铁";
+            case DAMAGED_ANVIL -> "严重受损的铁砧";
+            case ENCHANTING_TABLE -> "附魔台";
+            case ENDER_CHEST -> "末影箱";
+            case BEACON -> "信标";
+            case CONDUIT -> "潮涌核心";
+            case DRAGON_HEAD -> "末影龙头颅";
+            case PLAYER_HEAD -> "玩家头颅";
+            case ZOMBIE_HEAD -> "僵尸头颅";
+            case CREEPER_HEAD -> "苦力怕头颅";
+            case SKELETON_SKULL -> "骷髅头颅";
+            case WITHER_SKELETON_SKULL -> "凋灵骷髅头颅";
+            case PIGLIN_HEAD -> "猪灵头颅";
+            case NOTE_BLOCK -> "音符盒";
+            case JUKEBOX -> "唱片机";
+            case DISPENSER -> "发射器";
+            case DROPPER -> "投掷器";
+            case HOPPER -> "漏斗";
+            case REPEATER -> "红石中继器";
+            case COMPARATOR -> "红石比较器";
+            case OBSERVER -> "侦测器";
+            case PISTON -> "活塞";
+            case STICKY_PISTON -> "黏性活塞";
+            case RAIL -> "铁轨";
+            case POWERED_RAIL -> "充能铁轨";
+            case DETECTOR_RAIL -> "探测铁轨";
+            case ACTIVATOR_RAIL -> "激活铁轨";
+            case MINECART -> "矿车";
+            case CHEST_MINECART -> "运输矿车";
+            case FURNACE_MINECART -> "动力矿车";
+            case TNT_MINECART -> "TNT矿车";
+            case HOPPER_MINECART -> "漏斗矿车";
+            case COMMAND_BLOCK_MINECART -> "命令方块矿车";
             
             // 工具类
             case WOODEN_PICKAXE -> "木镐";
@@ -638,8 +1050,6 @@ public class Shan extends JavaPlugin implements Listener {
             case NAME_TAG -> "命名牌";
             case LEAD -> "栓绳";
             case SADDLE -> "鞍";
-            case TNT -> "TNT";
-            case BEDROCK -> "基岩";
             case WATER_BUCKET -> "水桶";
             case LAVA_BUCKET -> "岩浆桶";
             case MILK_BUCKET -> "奶桶";
