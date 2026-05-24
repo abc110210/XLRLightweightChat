@@ -1014,6 +1014,7 @@ public class Shan extends JavaPlugin implements Listener {
             case POTION -> "药水";
             case SPLASH_POTION -> "喷溅药水";
             case LINGERING_POTION -> "滞留药水";
+            case EXPERIENCE_BOTTLE -> "附魔之瓶";
             
             // 其他
             case BOW -> "弓";
@@ -1032,18 +1033,175 @@ public class Shan extends JavaPlugin implements Listener {
             case LAVA_BUCKET -> "岩浆桶";
             case MILK_BUCKET -> "奶桶";
             case BUCKET -> "桶";
+            case ENDER_PEARL -> "末影珍珠";
+            case ENDER_EYE -> "末影之眼";
+            case BLAZE_ROD -> "烈焰棒";
+            case GHAST_TEAR -> "恶魂之泪";
+            case NETHER_STAR -> "下界之星";
+            case DRAGON_BREATH -> "龙息";
+            case TOTEM_OF_UNDYING -> "不死图腾";
+            case ELYTRA -> "鞘翅";
+            case TRIDENT -> "三叉戟";
+            case TURTLE_HELMET -> "海龟壳";
+            case PHANTOM_MEMBRANE -> "幻翼膜";
+            case NAUTILUS_SHELL -> "鹦鹉螺壳";
+            case HEART_OF_THE_SEA -> "海洋之心";
+            case SPYGLASS -> "望远镜";
+            case GOAT_HORN -> "山羊角";
+            case ECHO_SHARD -> "回响碎片";
+            case RECOVERY_COMPASS -> "追溯指针";
+            case BRUSH -> "刷子";
+            case OAK_BOAT -> "橡木船";
+            case SPRUCE_BOAT -> "云杉船";
+            case BIRCH_BOAT -> "白桦船";
+            case JUNGLE_BOAT -> "丛林船";
+            case ACACIA_BOAT -> "金合欢船";
+            case DARK_OAK_BOAT -> "深色橡木船";
+            case MANGROVE_BOAT -> "红树木船";
+            case CHERRY_BOAT -> "樱花船";
+            case BAMBOO_RAFT -> "竹筏";
+            case CHEST_BOAT -> "运输船";
+            case MINECART -> "矿车";
+            case CHEST_MINECART -> "运输矿车";
+            case FURNACE_MINECART -> "动力矿车";
+            case TNT_MINECART -> "TNT矿车";
+            case HOPPER_MINECART -> "漏斗矿车";
+            case COMMAND_BLOCK_MINECART -> "命令方块矿车";
+            case OAK_SIGN -> "橡木告示牌";
+            case SPRUCE_SIGN -> "云杉告示牌";
+            case BIRCH_SIGN -> "白桦告示牌";
+            case JUNGLE_SIGN -> "丛林告示牌";
+            case ACACIA_SIGN -> "金合欢告示牌";
+            case DARK_OAK_SIGN -> "深色橡木告示牌";
+            case CRIMSON_SIGN -> "绯红木告示牌";
+            case WARPED_SIGN -> "诡异木告示牌";
+            case MANGROVE_SIGN -> "红树木告示牌";
+            case BAMBOO_SIGN -> "竹子告示牌";
+            case CHERRY_SIGN -> "樱花告示牌";
+            case OAK_HANGING_SIGN -> "橡木悬挂告示牌";
+            case SPRUCE_HANGING_SIGN -> "云杉悬挂告示牌";
+            case BIRCH_HANGING_SIGN -> "白桦悬挂告示牌";
+            case JUNGLE_HANGING_SIGN -> "丛林悬挂告示牌";
+            case ACACIA_HANGING_SIGN -> "金合欢悬挂告示牌";
+            case DARK_OAK_HANGING_SIGN -> "深色橡木悬挂告示牌";
+            case CRIMSON_HANGING_SIGN -> "绯红木悬挂告示牌";
+            case WARPED_HANGING_SIGN -> "诡异木悬挂告示牌";
+            case MANGROVE_HANGING_SIGN -> "红树木悬挂告示牌";
+            case BAMBOO_HANGING_SIGN -> "竹子悬挂告示牌";
+            case CHERRY_HANGING_SIGN -> "樱花悬挂告示牌";
+            case ARMOR_STAND -> "盔甲架";
+            case PAINTING -> "画";
+            case ITEM_FRAME -> "物品展示框";
+            case GLOW_ITEM_FRAME -> "荧光物品展示框";
+            case FLOWER_POT -> "花盆";
+            case MUSIC_DISC_13 -> "音乐唱片";
+            case MUSIC_DISC_CAT -> "音乐唱片";
+            case MUSIC_DISC_BLOCKS -> "音乐唱片";
+            case MUSIC_DISC_CHIRP -> "音乐唱片";
+            case MUSIC_DISC_FAR -> "音乐唱片";
+            case MUSIC_DISC_MALL -> "音乐唱片";
+            case MUSIC_DISC_MELLOHI -> "音乐唱片";
+            case MUSIC_DISC_STAL -> "音乐唱片";
+            case MUSIC_DISC_STRAD -> "音乐唱片";
+            case MUSIC_DISC_WARD -> "音乐唱片";
+            case MUSIC_DISC_11 -> "音乐唱片";
+            case MUSIC_DISC_WAIT -> "音乐唱片";
+            case MUSIC_DISC_OTHERSIDE -> "音乐唱片";
+            case MUSIC_DISC_5 -> "音乐唱片";
+            case MUSIC_DISC_PIGSTEP -> "音乐唱片";
+            case MUSIC_DISC_RELIC -> "音乐唱片";
+            case DISC_FRAGMENT_5 -> "唱片残片";
+            case ALLAY_SPAWN_EGG -> "悦灵刷怪蛋";
+            case AXOLOTL_SPAWN_EGG -> "美西螈刷怪蛋";
+            case BAT_SPAWN_EGG -> "蝙蝠刷怪蛋";
+            case BEE_SPAWN_EGG -> "蜜蜂刷怪蛋";
+            case BLAZE_SPAWN_EGG -> "烈焰人刷怪蛋";
+            case CAT_SPAWN_EGG -> "猫刷怪蛋";
+            case CAVE_SPIDER_SPAWN_EGG -> "洞穴蜘蛛刷怪蛋";
+            case CHICKEN_SPAWN_EGG -> "鸡刷怪蛋";
+            case COD_SPAWN_EGG -> "鳕鱼刷怪蛋";
+            case COW_SPAWN_EGG -> "牛刷怪蛋";
+            case CREEPER_SPAWN_EGG -> "苦力怕刷怪蛋";
+            case DOLPHIN_SPAWN_EGG -> "海豚刷怪蛋";
+            case DONKEY_SPAWN_EGG -> "驴刷怪蛋";
+            case DROWNED_SPAWN_EGG -> "溺尸刷怪蛋";
+            case ELDER_GUARDIAN_SPAWN_EGG -> "远古守卫者刷怪蛋";
+            case ENDERMAN_SPAWN_EGG -> "末影人刷怪蛋";
+            case ENDERMITE_SPAWN_EGG -> "末影螨刷怪蛋";
+            case EVOKER_SPAWN_EGG -> "唤魔者刷怪蛋";
+            case FOX_SPAWN_EGG -> "狐狸刷怪蛋";
+            case FROG_SPAWN_EGG -> "青蛙刷怪蛋";
+            case GHAST_SPAWN_EGG -> "恶魂刷怪蛋";
+            case GLOW_SQUID_SPAWN_EGG -> "发光鱿鱼刷怪蛋";
+            case GOAT_SPAWN_EGG -> "山羊刷怪蛋";
+            case GUARDIAN_SPAWN_EGG -> "守卫者刷怪蛋";
+            case HOGLIN_SPAWN_EGG -> "疣猪兽刷怪蛋";
+            case HORSE_SPAWN_EGG -> "马刷怪蛋";
+            case HUSK_SPAWN_EGG -> "尸壳刷怪蛋";
+            case LLAMA_SPAWN_EGG -> "羊驼刷怪蛋";
+            case MAGMA_CUBE_SPAWN_EGG -> "岩浆怪刷怪蛋";
+            case MOOSHROOM_SPAWN_EGG -> "哞菇刷怪蛋";
+            case MULE_SPAWN_EGG -> "骡刷怪蛋";
+            case OCELOT_SPAWN_EGG -> "豹猫刷怪蛋";
+            case PANDA_SPAWN_EGG -> "熊猫刷怪蛋";
+            case PARROT_SPAWN_EGG -> "鹦鹉刷怪蛋";
+            case PHANTOM_SPAWN_EGG -> "幻翼刷怪蛋";
+            case PIG_SPAWN_EGG -> "猪刷怪蛋";
+            case PIGLIN_SPAWN_EGG -> "猪灵刷怪蛋";
+            case PIGLIN_BRUTE_SPAWN_EGG -> "猪灵蛮兵刷怪蛋";
+            case PILLAGER_SPAWN_EGG -> "掠夺者刷怪蛋";
+            case POLAR_BEAR_SPAWN_EGG -> "北极熊刷怪蛋";
+            case PUFFERFISH_SPAWN_EGG -> "河豚刷怪蛋";
+            case RABBIT_SPAWN_EGG -> "兔子刷怪蛋";
+            case RAVAGER_SPAWN_EGG -> "劫掠兽刷怪蛋";
+            case SALMON_SPAWN_EGG -> "鲑鱼刷怪蛋";
+            case SHEEP_SPAWN_EGG -> "绵羊刷怪蛋";
+            case SHULKER_SPAWN_EGG -> "潜影贝刷怪蛋";
+            case SILVERFISH_SPAWN_EGG -> "蠹虫刷怪蛋";
+            case SKELETON_SPAWN_EGG -> "骷髅刷怪蛋";
+            case SKELETON_HORSE_SPAWN_EGG -> "骷髅马刷怪蛋";
+            case SLIME_SPAWN_EGG -> "史莱姆刷怪蛋";
+            case SNOW_GOLEM_SPAWN_EGG -> "雪傀儡刷怪蛋";
+            case SPIDER_SPAWN_EGG -> "蜘蛛刷怪蛋";
+            case SQUID_SPAWN_EGG -> "鱿鱼刷怪蛋";
+            case STRAY_SPAWN_EGG -> "流浪者刷怪蛋";
+            case STRIDER_SPAWN_EGG -> "炽足兽刷怪蛋";
+            case TADPOLE_SPAWN_EGG -> "蝌蚪刷怪蛋";
+            case TRADER_LLAMA_SPAWN_EGG -> "行商羊驼刷怪蛋";
+            case TROPICAL_FISH_SPAWN_EGG -> "热带鱼刷怪蛋";
+            case TURTLE_SPAWN_EGG -> "海龟刷怪蛋";
+            case VEX_SPAWN_EGG -> "恼鬼刷怪蛋";
+            case VILLAGER_SPAWN_EGG -> "村民刷怪蛋";
+            case VINDICATOR_SPAWN_EGG -> "卫道士刷怪蛋";
+            case WANDERING_TRADER_SPAWN_EGG -> "流浪商人刷怪蛋";
+            case WARDEN_SPAWN_EGG -> "监守者刷怪蛋";
+            case WITCH_SPAWN_EGG -> "女巫刷怪蛋";
+            case WITHER_SKELETON_SPAWN_EGG -> "凋灵骷髅刷怪蛋";
+            case WOLF_SPAWN_EGG -> "狼刷怪蛋";
+            case ZOGLIN_SPAWN_EGG -> "僵尸疣猪兽刷怪蛋";
+            case ZOMBIE_SPAWN_EGG -> "僵尸刷怪蛋";
+            case ZOMBIE_HORSE_SPAWN_EGG -> "僵尸马刷怪蛋";
+            case ZOMBIE_VILLAGER_SPAWN_EGG -> "僵尸村民刷怪蛋";
+            case ZOMBIFIED_PIGLIN_SPAWN_EGG -> "僵尸猪灵刷怪蛋";
             case OAK_SAPLING -> "橡树苗";
             case SPRUCE_SAPLING -> "云杉树苗";
             case BIRCH_SAPLING -> "白桦树苗";
             case JUNGLE_SAPLING -> "丛林树苗";
             case ACACIA_SAPLING -> "金合欢树苗";
             case DARK_OAK_SAPLING -> "深色橡树苗";
+            case MANGROVE_PROPAGULE -> "红树胎生苗";
+            case CHERRY_SAPLING -> "樱花树苗";
+            case AZALEA -> "杜鹃花丛";
+            case FLOWERING_AZALEA -> "盛开的杜鹃花丛";
             case OAK_LEAVES -> "橡树树叶";
             case SPRUCE_LEAVES -> "云杉树叶";
             case BIRCH_LEAVES -> "白桦树叶";
             case JUNGLE_LEAVES -> "丛林树叶";
             case ACACIA_LEAVES -> "金合欢树叶";
             case DARK_OAK_LEAVES -> "深色橡树叶";
+            case MANGROVE_LEAVES -> "红树木树叶";
+            case AZALEA_LEAVES -> "杜鹃树叶";
+            case FLOWERING_AZALEA_LEAVES -> "盛开的杜鹃树叶";
             
             // 默认：返回英文名称
             default -> material.name().replace('_', ' ').toLowerCase();
@@ -1121,7 +1279,7 @@ public class Shan extends JavaPlugin implements Listener {
         // 检查是否包含 %player% 且需要悬浮提示（在替换 %chat% 之前检查）
         boolean needHover = result.contains("%player%") && playerHoverLore != null && !playerHoverLore.isEmpty();
         
-        // 最后替换 %chat%（处理没有颜色变量的情况）
+        // 替换 %chat%（处理没有颜色变量的情况）
         result = result.replace("%chat%", message);
         
         // 在转换 & -> § 之前，提取最后一个传统颜色代码（&a 格式）
@@ -1130,7 +1288,7 @@ public class Shan extends JavaPlugin implements Listener {
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
         
-        // 处理 [item] 占位符（在颜色转换之后处理，避免物品显示中的 16 进制颜色被破坏）
+        // 处理 [item] 占位符（支持格式字符串和玩家消息中的 [item]）
         if (displayItemEnabled && result.contains("[item]")) {
             String itemDisplay = getHandItemDisplay(player);
             if (itemDisplay != null) {
