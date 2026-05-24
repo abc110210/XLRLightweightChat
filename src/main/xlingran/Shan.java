@@ -1271,36 +1271,32 @@ public class Shan extends JavaPlugin implements Listener {
         
         // 检查是否包含 %player% 且需要悬浮提示（在替换 %chat% 之前检查）
         boolean needHover = result.contains("%player%") && playerHoverLore != null && !playerHoverLore.isEmpty();
-        
-        // 替换 %chat%（处理没有颜色变量的情况）
-        result = result.replace("%chat%", message);
-        
-        // 在转换 & -> § 之前，提取最后一个传统颜色代码（&a 格式）
-        net.md_5.bungee.api.ChatColor playerColor = needHover ? extractLastColorCode(result) : null;
-        
-        // 转换传统颜色代码 & -> §
-        result = ChatColor.translateAlternateColorCodes('&', result);
-        
-        // 处理 [item] 占位符（支持格式字符串和玩家消息中的 [item]）
-        if (displayItemEnabled && result.contains("[item]")) {
+
+        // 优先处理 [item] 占位符（在应用渐变颜色之前处理）
+        if (displayItemEnabled && message.contains("[item]")) {
             String itemDisplay = getHandItemDisplay(player);
             if (itemDisplay != null) {
                 // 转换物品显示中的颜色代码
                 String convertedItemDisplay = ChatColor.translateAlternateColorCodes('&', itemDisplay);
-                result = result.replace("[item]", convertedItemDisplay);
-                // 调试日志
+                message = message.replace("[item]", convertedItemDisplay);
                 getLogger().info("[物品展示] 已替换 [item] 为: " + convertedItemDisplay);
             } else {
                 // 如果手里没有物品，移除 [item]
-                result = result.replace("[item]", "");
+                message = message.replace("[item]", "");
                 getLogger().info("[物品展示] 玩家手中无物品，已移除 [item]");
             }
-        } else if (!displayItemEnabled) {
-            // 调试日志：功能未启用
-            if (result.contains("[item]")) {
-                getLogger().warning("[物品展示] 检测到 [item] 但功能未启用！请检查 config.yml 中 Displayitem: true");
-            }
+        } else if (!displayItemEnabled && message.contains("[item]")) {
+            getLogger().warning("[物品展示] 检测到 [item] 但功能未启用！请检查 config.yml 中 Displayitem: true");
         }
+
+        // 替换 %chat%（处理没有颜色变量的情况）
+        result = result.replace("%chat%", message);
+
+        // 在转换 & -> § 之前，提取最后一个传统颜色代码（&a 格式）
+        net.md_5.bungee.api.ChatColor playerColor = needHover ? extractLastColorCode(result) : null;
+
+        // 转换传统颜色代码 & -> §
+        result = ChatColor.translateAlternateColorCodes('&', result);
         
         if (needHover || needTitleHover) {
             return buildComponentWithHover(result, player, playerColor, playerColorGradient, title, titleId, needTitleHover);
