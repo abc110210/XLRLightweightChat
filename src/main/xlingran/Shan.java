@@ -1272,16 +1272,15 @@ public class Shan extends JavaPlugin implements Listener {
         // 检查是否包含 %player% 且需要悬浮提示（在替换 %chat% 之前检查）
         boolean needHover = result.contains("%player%") && playerHoverLore != null && !playerHoverLore.isEmpty();
 
-        // 优先处理 [item] 占位符（在应用渐变颜色之前处理）
+        // 优先处理 [item] 占位符（使用临时占位符保护，避免被渐变处理破坏）
+        String itemPlaceholder = null;
         if (displayItemEnabled && message.contains("[item]")) {
             String itemDisplay = getHandItemDisplay(player);
             if (itemDisplay != null) {
                 // 转换物品显示中的颜色代码 & -> §
                 String convertedItemDisplay = ChatColor.translateAlternateColorCodes('&', itemDisplay);
-                // 将 § 转换回 &，让后续的颜色转换统一处理
-                convertedItemDisplay = convertedItemDisplay.replace('§', '&');
-                message = message.replace("[item]", convertedItemDisplay);
-                getLogger().info("[物品展示] 已替换 [item] 为: " + convertedItemDisplay);
+                itemPlaceholder = convertedItemDisplay;
+                getLogger().info("[物品展示] 已替换 [item] 为: " + itemPlaceholder);
             } else {
                 // 如果手里没有物品，移除 [item]
                 message = message.replace("[item]", "");
@@ -1291,14 +1290,39 @@ public class Shan extends JavaPlugin implements Listener {
             getLogger().warning("[物品展示] 检测到 [item] 但功能未启用！请检查 config.yml 中 Displayitem: true");
         }
 
+        // 如果有 [item] 替换，先使用临时占位符
+        if (itemPlaceholder != null) {
+            message = message.replace("[item]", "___XLR_ITEM_PLACEHOLDER___");
+        }
+
         // 替换 %chat%（处理没有颜色变量的情况）
         result = result.replace("%chat%", message);
+
+        // 处理颜色变量应用到 %chat% 上
+        for (Map.Entry<String, String> entry : colorVariables.entrySet()) {
+            if (result.contains(entry.getKey())) {
+                String gradientConfig = entry.getValue();
+                String placeholder = entry.getKey();
+
+                // 查找 %colorX%%chat% 并替换为渐变后的消息
+                String pattern = placeholder + "%chat%";
+                if (result.contains(pattern)) {
+                    String gradientResult = applyGradient(gradientConfig, message);
+                    result = result.replace(pattern, gradientResult);
+                }
+            }
+        }
 
         // 在转换 & -> § 之前，提取最后一个传统颜色代码（&a 格式）
         net.md_5.bungee.api.ChatColor playerColor = needHover ? extractLastColorCode(result) : null;
 
         // 转换传统颜色代码 & -> §
         result = ChatColor.translateAlternateColorCodes('&', result);
+
+        // 渐变处理完成后，将临时占位符替换为实际的物品显示
+        if (itemPlaceholder != null) {
+            result = result.replace("___XLR_ITEM_PLACEHOLDER___", itemPlaceholder);
+        }
         
         if (needHover || needTitleHover) {
             return buildComponentWithHover(result, player, playerColor, playerColorGradient, title, titleId, needTitleHover);
