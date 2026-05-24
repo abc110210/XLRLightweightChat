@@ -1288,9 +1288,17 @@ public class Shan extends JavaPlugin implements Listener {
                 // 转换物品显示中的颜色代码
                 String convertedItemDisplay = ChatColor.translateAlternateColorCodes('&', itemDisplay);
                 result = result.replace("[item]", convertedItemDisplay);
+                // 调试日志
+                getLogger().info("[物品展示] 已替换 [item] 为: " + convertedItemDisplay);
             } else {
                 // 如果手里没有物品，移除 [item]
                 result = result.replace("[item]", "");
+                getLogger().info("[物品展示] 玩家手中无物品，已移除 [item]");
+            }
+        } else if (!displayItemEnabled) {
+            // 调试日志：功能未启用
+            if (result.contains("[item]")) {
+                getLogger().warning("[物品展示] 检测到 [item] 但功能未启用！请检查 config.yml 中 Displayitem: true");
             }
         }
         
