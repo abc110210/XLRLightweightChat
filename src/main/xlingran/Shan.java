@@ -1276,8 +1276,10 @@ public class Shan extends JavaPlugin implements Listener {
         if (displayItemEnabled && message.contains("[item]")) {
             String itemDisplay = getHandItemDisplay(player);
             if (itemDisplay != null) {
-                // 转换物品显示中的颜色代码
+                // 转换物品显示中的颜色代码 & -> §
                 String convertedItemDisplay = ChatColor.translateAlternateColorCodes('&', itemDisplay);
+                // 将 § 转换回 &，让后续的颜色转换统一处理
+                convertedItemDisplay = convertedItemDisplay.replace('§', '&');
                 message = message.replace("[item]", convertedItemDisplay);
                 getLogger().info("[物品展示] 已替换 [item] 为: " + convertedItemDisplay);
             } else {
