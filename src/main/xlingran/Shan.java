@@ -1273,7 +1273,7 @@ public class Shan extends JavaPlugin implements Listener {
         boolean needHover = result.contains("%player%") && playerHoverLore != null && !playerHoverLore.isEmpty();
 
         // 优先处理 [item] 占位符（在应用渐变颜色之前处理）
-        // 使用一个不太可能被玩家输入的字符串作为临时占位符
+        // 使用纯字母的临时占位符，避免被颜色代码解析器破坏
         String itemPlaceholder = null;
         if (displayItemEnabled && message.contains("[item]")) {
             String itemDisplay = getHandItemDisplay(player);
@@ -1281,8 +1281,8 @@ public class Shan extends JavaPlugin implements Listener {
                 // 转换物品显示中的颜色代码 & -> §
                 String convertedItemDisplay = ChatColor.translateAlternateColorCodes('&', itemDisplay);
                 itemPlaceholder = convertedItemDisplay;
-                // 使用特殊字符避免被渐变破坏
-                message = message.replace("[item]", "§§§XLRITEM§§§");
+                // 使用纯字母占位符，避免被颜色代码解析
+                message = message.replace("[item]", "XLRITEMPLACEHOLDER");
                 getLogger().info("[物品展示] 已替换 [item] 为: " + itemPlaceholder);
             } else {
                 // 如果手里没有物品，移除 [item]
@@ -1320,8 +1320,8 @@ public class Shan extends JavaPlugin implements Listener {
 
         // 最后将临时占位符替换为实际的物品显示（已经是 § 格式）
         if (itemPlaceholder != null) {
-            result = result.replace("§§§XLRITEM§§§", itemPlaceholder);
-            getLogger().info("[物品展示] 已将临时占位符替换为物品显示");
+            result = result.replace("XLRITEMPLACEHOLDER", itemPlaceholder);
+            getLogger().info("[物品展示] 已将临时占位符替换为物品显示，最终结果长度: " + result.length());
         }
         
         if (needHover || needTitleHover) {
