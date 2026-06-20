@@ -1,7 +1,7 @@
 name: Shan
 version: 1.0.0
 main: xlingran.Shan
-api-version: '1.16'
+api-version: '1.21.1'
 commands:
   shan:
     description: 桥接 spark health 的 RCON 输出
