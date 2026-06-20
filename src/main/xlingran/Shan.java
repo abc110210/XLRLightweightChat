@@ -3,7 +3,6 @@ package xlingran;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.ByteArrayOutputStream;
@@ -15,20 +14,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * Shan - spark health RCON 桥接插件
  *
- * spark 的 health 命令在 RCON 下输出聊天组件，RCON 收到空 payload。
- * 本插件临时拦截 System.out，以控制台身份执行 spark health，
- * 等待输出完成后把捕获的纯文本回送给 RCON 调用方。
+ * spark health 在主线程 dispatchCommand 时会抛 NPE（spark 自身 bug），
+ * 但实际上 spark 把报告生成调度到 Craft Scheduler 异步线程，
+ * 通过 System.out 输出。本插件捕获 System.out 收集异步输出。
  *
  * 用法（RCON 或控制台）： /shan [命令]
  *   不带参数 → 默认执行 "spark health"
- *   带参数   → 执行自定义命令
- *
- * 同目录下需配套 plugin.yml（内容见文件末尾注释）。
  */
 public class Shan extends JavaPlugin {
 
-    private static final int CAPTURE_DELAY_MS = 800;
-    private static final int FUTURE_TIMEOUT_SEC = 5;
+    private static final int CAPTURE_DELAY_MS = 3000;
+    private static final int DISPATCH_TIMEOUT_SEC = 3;
 
     @Override
     public void onEnable() {
@@ -42,22 +38,6 @@ public class Shan extends JavaPlugin {
         }
         String targetCommand = args.length > 0 ? String.join(" ", args) : "spark health";
 
-        Future<String> future = Bukkit.getScheduler().callSyncMethod(
-            this,
-            () -> captureOutput(targetCommand)
-        );
-
-        String output;
-        try {
-            output = future.get(FUTURE_TIMEOUT_SEC, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            output = "Error: " + e.getMessage();
-        }
-        sender.sendMessage(output);
-        return true;
-    }
-
-    private String captureOutput(String command) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         PrintStream capturing = new PrintStream(buffer, true, StandardCharsets.UTF_8);
         PrintStream originalOut = System.out;
@@ -67,13 +47,23 @@ public class Shan extends JavaPlugin {
             System.setOut(capturing);
             System.setErr(capturing);
             try {
-                ConsoleCommandSender console = Bukkit.getConsoleSender();
-                Bukkit.dispatchCommand(console, command);
+                // dispatchCommand 调度到主线程；spark 会抛 NPE 但不影响异步输出，吞掉
+                Future<?> future = Bukkit.getScheduler().callSyncMethod(this, () -> {
+                    try {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), targetCommand);
+                    } catch (Throwable ignored) {
+                    }
+                    return null;
+                });
+                try {
+                    future.get(DISPATCH_TIMEOUT_SEC, TimeUnit.SECONDS);
+                } catch (Exception ignored) {
+                }
+
+                // sleep 在 RCON 线程，给 spark 异步输出时间，不阻塞主线程
                 Thread.sleep(CAPTURE_DELAY_MS);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                capturing.println("Error: " + e.getMessage());
             } finally {
                 capturing.flush();
                 System.setOut(originalOut);
@@ -82,6 +72,7 @@ public class Shan extends JavaPlugin {
         }
 
         String output = buffer.toString(StandardCharsets.UTF_8);
-        return output.isEmpty() ? "(无输出)" : output;
+        sender.sendMessage(output.isEmpty() ? "(无输出)" : output);
+        return true;
     }
 }
